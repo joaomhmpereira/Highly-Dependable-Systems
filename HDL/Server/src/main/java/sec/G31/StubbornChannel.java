@@ -1,19 +1,22 @@
 package sec.G31;
 
-/**
- * This class will implement the creation of the message to send
- * it will have 1 module named perfect channel.
- *
- */
+import java.io.*;
+import java.net.*;
+
 public class StubbornChannel
 {
-    private UDPchannel _udpchannel;
+    private UDPchannel _udpChannel;
     private InetAddress _address; 
-    private int _port
+    private int _port;
 
-    public PerfectAuthChannel(InetAddress serverAddress, int serverPort){
+    public StubbornChannel(InetAddress serverAddress, int serverPort){
         _address = serverAddress;
-        _udpchannel = new UDPchannel(_address);
         _port = serverPort;
+        _udpChannel = new UDPchannel(_address, _port);
+    }
+
+    public void sendMessage(String destAddress, int destPort, String msg){
+        System.out.printf("%s %d %s\n", destAddress, destPort, msg);
+        _udpChannel.sendMessage(destAddress, destPort, msg);
     }
 }

@@ -3,9 +3,12 @@ package sec.G31;
 import java.io.*;
 import java.net.*;
 
+/**
+ * Since it extends Thread, the procedure defined in run will run in a separate thread
+ * from the rest of the program. 
+ * When you want to run the run function and you call UDPserver.start
+ */
 public class UDPserver extends Thread{
-
-    // input: "port"
 
 	/**
 	 * Maximum size for a UDP packet. The field size sets a theoretical limit of
@@ -27,13 +30,16 @@ public class UDPserver extends Thread{
     /** datagram socket for this server */
     private DatagramSocket _socket;
 
-	public UDPserver(int portNumber) throws IOException{
+    private UDPchannel _channel;
+
+    /**
+     * Creates the UDP server, links it to the udp channel that created it.
+     * 
+     */
+	public UDPserver(UDPchannel channel, int portNumber, DatagramSocket socket) throws IOException{
 		_port = portNumber;
-        try{
-    		_socket = new DatagramSocket(_port);
-        } catch(Exception e){
-            e.printStackTrace();
-        }
+        _channel = channel;
+        _socket = socket;
 		System.out.printf("Server will be connected to port %d %n", _port);
 	}
 
@@ -69,26 +75,16 @@ public class UDPserver extends Thread{
                     running = false;
                 }
             
-                // sending back a repsonse
-                String serverText = "Hello " + clientText;
-                System.out.println("Text to send: " + serverText);
-                byte[] serverData = serverText.getBytes();
-                System.out.printf("%d bytes to send%n", serverData.length);
-            
-                DatagramPacket serverPacket = new DatagramPacket(serverData, serverData.length, clientAddress, clientPort);
-                _socket.send(serverPacket);
-                System.out.println("Sent packet: " + serverPacket);
+                _channel.receivedMessage(clientText, clientPort, clientAddress);
             }
-            // Close socket
+
+            // Close socket (this will also close the socket used by the client)
             _socket.close();
             System.out.println("Closed socket");
         } catch( IOException e){
             System.out.println("Error on UDP server");
             e.printStackTrace();
         }
-        // Close socket
-        _socket.close();
-        System.out.println("Closed socket");
     }
 
 

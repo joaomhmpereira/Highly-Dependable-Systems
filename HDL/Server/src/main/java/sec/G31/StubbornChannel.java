@@ -1,10 +1,10 @@
 package sec.G31;
-
-import java.io.*;
+import java.util.logging.Logger;
 import java.net.*;
 
 public class StubbornChannel
 {
+    private final static Logger LOGGER = Logger.getLogger(StubbornChannel.class.getName());
     private UDPchannel _udpChannel;
     private InetAddress _address; 
     private int _port;
@@ -17,13 +17,48 @@ public class StubbornChannel
         _pac = pac;
     }
 
+   
+    /**
+     * TO-DO: Change the msg to an object with sequence numbers and seqId's 
+     *
+     * @param destAddress
+     * @param destPort
+     * @param msg
+     */
     public void sendMessage(InetAddress destAddress, int destPort, String msg){
-        System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
-        _udpChannel.sendMessage(destAddress, destPort, msg);
+        class StubbornSender implements Runnable{
+            InetAddress _dest;
+            int _port;
+            String _msg;
+            public StubbornSender(InetAddress destAddress, int destPort, String msg){
+                _dest = destAddress;
+                _port = destPort;
+                _msg = msg;
+            }
+
+            public void run(){
+                while(true){
+                    System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                    _udpChannel.sendMessage(_dest, _port, _msg);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
+        t1.start();
+
+        //System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
+        //_udpChannel.sendMessage(destAddress, destPort, msg);
     }
 
+    
+
     public void receivedMessage(String msg, int port, InetAddress address){
-        System.out.println("UDP:: received message");
+        LOGGER.info("SC:: received message");
         _pac.receivedMessage(msg, port, address);
     }
 }

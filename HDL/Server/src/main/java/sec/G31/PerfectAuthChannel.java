@@ -1,10 +1,13 @@
 package sec.G31;
-
-import java.io.*;
+import java.util.logging.Logger;
 import java.net.*;
 
+/**
+ * TO-DO: implementar a autenticacao
+ */
 public class PerfectAuthChannel 
 {
+    private final static Logger LOGGER = Logger.getLogger(PerfectAuthChannel.class.getName());
     private StubbornChannel _stubChannel;
     private Server _server; 
     private InetAddress _address; 
@@ -18,13 +21,12 @@ public class PerfectAuthChannel
     }
 
     public void sendMessage(InetAddress destAddress, int destPort, String msg){
-        System.out.printf("PAC:: %s %d %s\n", destAddress, destPort, msg);
+        LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
         _stubChannel.sendMessage(destAddress, destPort, msg);
     }
 
     public void receivedMessage(String msg, int port, InetAddress address){
-        System.out.println("UDP:: received message");
-
+        LOGGER.info("PAC:: received message");
         _server.receivedMessage(msg, port, address);
     }
 }

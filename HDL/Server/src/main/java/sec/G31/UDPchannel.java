@@ -1,10 +1,11 @@
 package sec.G31;
-
+import java.util.logging.Logger;
 import java.io.*;
 import java.net.*;
 
 public class UDPchannel 
 {
+    private final static Logger LOGGER = Logger.getLogger(UDPchannel.class.getName());
     private StubbornChannel _channel;
     private UDPclient _client;
     private UDPserver _server;

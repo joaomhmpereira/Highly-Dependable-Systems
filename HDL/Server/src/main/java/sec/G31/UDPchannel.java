@@ -1,5 +1,7 @@
 package sec.G31;
 import java.util.logging.Logger;
+
+import sec.G31.messages.Message;
 import java.io.*;
 import java.net.*;
 
@@ -23,9 +25,9 @@ public class UDPchannel
         }
     }
 
-    public void sendMessage(InetAddress destAddress, int destPort, String msg){
+    public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         try{
-            System.out.println("UDPchannel:: " + destAddress + " " + destPort + " " + msg);
+            LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
             _client = new UDPclient(destAddress, destPort, _socket, msg);
         }catch(IOException e){
             System.out.println("Error while sending message");
@@ -33,9 +35,9 @@ public class UDPchannel
         }
     }
 
-    public void receivedMessage(String text, int port, InetAddress address){
-        System.out.println("UDP:: received message");
-        _channel.receivedMessage(text, port, address);
+    public void receivedMessage(Message msg, int port, InetAddress address){
+        LOGGER.info("UDP:: received message");
+        _channel.receivedMessage(msg, port, address);
     }
 
 }

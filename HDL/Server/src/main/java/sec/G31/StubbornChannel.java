@@ -1,5 +1,8 @@
 package sec.G31;
 import java.util.logging.Logger;
+
+import sec.G31.messages.Message;
+
 import java.net.*;
 
 public class StubbornChannel
@@ -25,12 +28,12 @@ public class StubbornChannel
      * @param destPort
      * @param msg
      */
-    public void sendMessage(InetAddress destAddress, int destPort, String msg){
+    public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         class StubbornSender implements Runnable{
             InetAddress _dest;
             int _port;
-            String _msg;
-            public StubbornSender(InetAddress destAddress, int destPort, String msg){
+            Message _msg;
+            public StubbornSender(InetAddress destAddress, int destPort, Message msg){
                 _dest = destAddress;
                 _port = destPort;
                 _msg = msg;
@@ -57,7 +60,7 @@ public class StubbornChannel
 
     
 
-    public void receivedMessage(String msg, int port, InetAddress address){
+    public void receivedMessage(Message msg, int port, InetAddress address){
         LOGGER.info("SC:: received message");
         _pac.receivedMessage(msg, port, address);
     }

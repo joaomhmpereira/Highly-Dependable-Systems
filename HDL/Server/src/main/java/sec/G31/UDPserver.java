@@ -1,5 +1,8 @@
 package sec.G31;
 import java.util.logging.Logger;
+
+import sec.G31.messages.Message;
+import org.apache.commons.lang3.*;
 import java.io.*;
 import java.net.*;
 
@@ -22,9 +25,6 @@ public class UDPserver extends Thread{
 
 	/** Buffer size for receiving a UDP packet. */
 	private static final int BUFFER_SIZE = MAX_UDP_DATA_SIZE;
-
-	/** Custom command to stop the server. */
-	private static final String END_MESSAGE = "end";
 
     /** port number of the server */
     private final int _port; 
@@ -52,11 +52,11 @@ public class UDPserver extends Thread{
     class ProcessMessage implements Runnable{
             InetAddress _address;
             int _port;
-            String _msg;
-            public ProcessMessage(InetAddress clientAddress, int clientPort, String txt){
+            Message _msg;
+            public ProcessMessage(InetAddress clientAddress, int clientPort, Message msg){
                 _address = clientAddress;
                 _port = clientPort;
-                _msg = txt;
+                _msg = msg;
             }
 
             /** it will run in a separate thread */
@@ -83,7 +83,6 @@ public class UDPserver extends Thread{
             
                 InetAddress clientAddress = clientPacket.getAddress();
                 int clientPort = clientPacket.getPort();
-                int clientLength = clientPacket.getLength();
                 byte[] clientData = clientPacket.getData();
             
                 //System.out.printf("Received from: %s:%d %n", clientAddress, clientPort);
@@ -91,19 +90,21 @@ public class UDPserver extends Thread{
                 //System.out.printf("Received bytes: %d %n", clientLength);
                 // this will usually be smaller than the buffer size
                 //System.out.printf("Receive buffer size: %d %n", clientData.length);
-            
-                String clientText = new String(clientData, 0, clientLength);
+                
+                Message message = (Message) SerializationUtils.deserialize(clientData);
+
+                //String clientText = new String(clientData, 0, clientLength);
                 //System.out.println("Received text: " + clientText);
-                LOGGER.info("Received text: " + clientText);
+                LOGGER.info("Received : " + message.toString());
             
-                if (END_MESSAGE.equals(clientText)) {
-                    // this will be the last reply from the server
-                    System.out.println("Received END message");
-                    running = false;
-                }
+                //if (END_MESSAGE.equals(clientText)) {
+                //    // this will be the last reply from the server
+                //    System.out.println("Received END message");
+                //    running = false;
+                //}
 
                 // calling a new thread that will process the message
-                Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, clientText));
+                Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
                 t1.start();
             }
 

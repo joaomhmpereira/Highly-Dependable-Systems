@@ -4,7 +4,8 @@ import java.io.*;
 import java.util.Scanner;
 import java.net.*;
 import java.util.logging.Logger;
-import sec.G31.messages.PrepareMessage;
+import org.apache.commons.lang3.*;
+import sec.G31.messages.Message;
 
 public class App
 {
@@ -59,13 +60,11 @@ public class App
             //BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
             // trying to send a message
-            String destAddr = "127.0.0.1";
-            int destPort = 4446;
-            String msg = "";
-            //PrepareMessage prepareMessage = new PrepareMessage(1, "Ola");
-            //final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            //final ObjectOutputStream oos = new ObjectOutputStream(baos);
-            //oos.writeObject(prepareMessage);
+            //String destAddr = "127.0.0.1";
+            //int destPort = 4446;
+            //Message prepareMessage = new Message("PREPARE", 1, "Ola");
+            //byte[] data = SerializationUtils.serialize(prepareMessage);
+            
             
             //while(!msg.equals("end")){
             //    // Reading data using readLine

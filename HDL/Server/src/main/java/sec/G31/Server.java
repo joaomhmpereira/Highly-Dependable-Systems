@@ -11,7 +11,8 @@ public class Server
     private String _faultType;
     private String _leaderFlag;
     private int _port;
-    private PerfectAuthChannel _channel;
+    //private PerfectAuthChannel _channel;
+    private IBFT _ibft;
     // <server id, port>
     private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>();
 
@@ -20,9 +21,18 @@ public class Server
         _id = serverId;
         _address = serverAddress;
         _port = serverPort;
-        _channel = new PerfectAuthChannel(this, _address, _port);
+        //_channel = new PerfectAuthChannel(this, _address, _port);
+        _ibft = new IBFT(this);
         _faultType = faultType;
         _leaderFlag = leaderFlag;
+    }
+
+    public InetAddress getAddress(){
+        return _address;
+    }
+
+    public int getPort(){
+        return _port;
     }
 
     public int getId() {
@@ -33,7 +43,7 @@ public class Server
         _myNeighbors.put(neighborId, neighborPort); // ver se da int para a hashtable
     }
     
-    boolean isLeader() {
+    boolean isLeader(int currentRound) {
         return _leaderFlag.equals("Y");
     }
 
@@ -46,7 +56,7 @@ public class Server
         InetAddress serverAddress;
         try {
             serverAddress = InetAddress.getByName(destServer);
-            _channel.sendMessage(serverAddress, destPort, msg);
+            //_channel.sendMessage(serverAddress, destPort, msg);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

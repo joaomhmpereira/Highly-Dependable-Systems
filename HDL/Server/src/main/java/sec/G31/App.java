@@ -59,12 +59,8 @@ public class App
             }
             myReader.close();
             
-            if (leaderFlag.equals("Y")) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                System.out.println("Enter the value to be sent: ");
-                String msg = reader.readLine();
-                server.startIBFT(msg);                
-            }
+            LOGGER.info("Starting IBFT");
+            server.startIBFT("MENSAGEM");                
 
             // trying to send a message
             //String destAddr = "127.0.0.1";

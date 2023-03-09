@@ -34,15 +34,16 @@ public class BroadcastManager
      * object of that type in our database
      */
     public void receivedMessage(Message msg){
+        System.out.println(msg.toString());
         String type = msg.getType();
         switch(type){
-            case "pre-prepare":
+            case "PRE-PREPARE":
                 _ibft.receivePrePrepare(msg);
                 break;
-            case "prepare":
+            case "PREPARE":
                 _ibft.receivePrepare(msg);
                 break;
-            case "commit":
+            case "COMMIT":
                 _ibft.receiveCommit(msg);
                 break;
         }
@@ -52,12 +53,9 @@ public class BroadcastManager
      * sends a message to every server
      */
     public void sendBroadcast(Message msg){
-        // send message to all
-        InetAddress destAddr;
         try {
-            destAddr = InetAddress.getByName("127.0.0.1");
-            // for(int i = 0; i < _numNeighbours; i++){ tava assim
-            for(int i = 0; i < _broadcastNeighbors.size(); i++){ // send to all servers 
+            InetAddress destAddr = InetAddress.getByName("127.0.0.1");
+            for(int i = 1; i <= _broadcastNeighbors.size(); i++){ // send to all servers 
                 _channel.sendMessage(destAddr, _broadcastNeighbors.get(i), msg);
             }
         } catch (UnknownHostException e) {

@@ -27,6 +27,7 @@ public class Server
         _ibft = new IBFT(this, numFaulty); // TO-DO: send the number of faulty nodes
         _faultType = faultType;
         _leaderFlag = leaderFlag;
+        System.out.println("===Server " + _id + " created===");
     }
 
     public void startIBFT(String value){

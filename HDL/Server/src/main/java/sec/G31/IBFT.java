@@ -3,6 +3,7 @@ package sec.G31;
 import java.util.logging.Logger;
 import java.util.Hashtable;
 import sec.G31.messages.Message;
+import java.util.ArrayList;
 
 
 // nao sei se vai ter que ser uma thread actually 
@@ -26,11 +27,17 @@ public class IBFT
     private int _preparedRound;
     private String _preparedValue;
     private String _inputValue;
-    private int _numPreparesReceived;
-    private int _numCommitsReceived;
+    private boolean _sentPrepare;
+    private boolean _sentCommit; 
+    private boolean _decided;
+    private int _numCommitsReceived; // 
     private int _F; // faulty nodes
-    private Hashtable<String, Integer> _prepareQuorum; // <value, count> of prepares received for a value for this round
-    private Hashtable<String, Integer> _commitQuorum; // <value, count> of commits received for a value for this round
+    private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of guys that sent us prepare> 
+    private Hashtable<String, ArrayList<Integer>> _commitQuorum; // <value, list of guys that sent us commit> 
+    private final String PREPARE_MSG = "PREPARE";
+    private final String PRE_PREPARE_MSG = "PRE-PREPARE";
+    private final String COMMIT_MSG = "COMMIT";
+
     
 
     // manager.newPrePrepareBroadcast(msg)
@@ -47,10 +54,13 @@ public class IBFT
         _currentRound = 0;
         _preparedRound = 0;
         _preparedValue = "";
-        _numPreparesReceived = 0;
-        _numCommitsReceived = 0;
+        _prepareQuorum = new Hashtable<String, ArrayList<Integer>>();
+        _commitQuorum = new Hashtable<String, ArrayList<Integer>>();
         _broadcast = new BroadcastManager(this, server, server.getBroadcastNeighbours());
         _F = faultyNodes; 
+        _sentPrepare = false;
+        _decided = false;
+        _sentCommit = false;
         _leader = 1; // just for this implementation 
     }
 
@@ -70,7 +80,7 @@ public class IBFT
         // ze/joazoca se for faulty e mudar o server id para 1 é possivel?
 
         if(_server.getId() == _leader){  // if it's the leader
-            Message prePrepareMessage = new Message("PRE-PREPARE", _instance, _currentRound, _inputValue, _server.getId());
+            Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId());
             _broadcast.sendBroadcast(prePrepareMessage);
         }
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
@@ -79,7 +89,7 @@ public class IBFT
 
     public void sendPrepares(int instance, int round, String value){
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
-        Message prepareMessage = new Message("PREPARE", instance, round, value, _server.getId());
+        Message prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
         _broadcast.sendBroadcast(prepareMessage);
     }
 
@@ -89,16 +99,18 @@ public class IBFT
         _preparedValue = value;
 
 
-        Message commitMessage = new Message("COMMIT", _instance, _preparedRound, _preparedValue, _server.getId());
+        Message commitMessage = new Message(COMMIT_MSG, _instance, _preparedRound, _preparedValue, _server.getId());
         _broadcast.sendBroadcast(commitMessage);  // broadcast
     }
 
     /**
      * when we receive a quorum of commit
      */
-    public void receivedCommitQuorum(){
+    public void receivedCommitQuorum(Message msg){
         // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
+        //LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
+        System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
     }
 
 
@@ -112,6 +124,7 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound && 
                 msg.getSenderId() == _leader){
             // set timer to running
+            _sentPrepare = true;
             this.sendPrepares(_instance, _currentRound, msg.getValue());
         }
     }
@@ -126,9 +139,20 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound){
             String value = msg.getValue();
             //update the quorum or insert new entry if it isn't there
-            _prepareQuorum.put(value, _prepareQuorum.getOrDefault(value, 0)+1);
+            // if still no one had sent commit
+            if (!_prepareQuorum.containsKey(value)) {
+                _prepareQuorum.put(value, new ArrayList<Integer>());
+            } else {
+                ArrayList<Integer> list = _prepareQuorum.get(value);
+                if(!list.contains(msg.getSenderId())){
+                    list.add(msg.getSenderId());
+                    _prepareQuorum.put(value, list);
+                }
+            }
             
-            if(_prepareQuorum.get(value) == 2*_F+1){ // in case of quorum
+            // only send one commit if we have already quorum
+            if(_prepareQuorum.get(value).size() >= 2*_F+1 && _sentCommit == false){ // in case of quorum
+                _sentCommit = true;
                 this.receivedPrepareQuorum(_currentRound, value);
             }
         }
@@ -142,16 +166,24 @@ public class IBFT
 
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound){
             String value = msg.getValue();
+            
+            // if still no one had sent commit
+            if (!_commitQuorum.containsKey(value)) {
+                _commitQuorum.put(value, new ArrayList<Integer>());
+            } else {
+                ArrayList<Integer> list = _commitQuorum.get(value);
+                if(!list.contains(msg.getSenderId())){
+                    list.add(msg.getSenderId());
+                    _commitQuorum.put(value, list);
+                }
+            }
+            
+            System.out.println("Commit quorum size: " + _commitQuorum.get(value).size());
 
-            //update the quorum or insert new entry if it isn't there
-            _commitQuorum.put(value, _commitQuorum.getOrDefault(value, 0)+1);
-            //if(_commitQuorum.contains(value))
-            //    _commitQuorum.put(value, _prepareQuorum.get(value)+1);
-            //else   
-            //    _commitQuorum.put(value, 1);
-
-            if(_commitQuorum.get(value) == 2*_F+1){
-                this.receivedCommitQuorum(); // we received a quorum
+            // decide the value only one time
+            if(_commitQuorum.get(value).size() >= 2*_F+1 && _decided == false){
+                _decided = true;
+                this.receivedCommitQuorum(msg); // we received a quorum
             }
         }
     }

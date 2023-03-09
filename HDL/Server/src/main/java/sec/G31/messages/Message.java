@@ -11,8 +11,9 @@ public class Message implements Serializable {
     private String _value;
     private int _senderId;
 
-    public Message(String _type, int instance, int round, String value, int senderId){
+    public Message(String type, int instance, int round, String value, int senderId){
         //_sequenceNumber = sequenceNumber;
+        _type = type;
         _value = value;
         _round = round;
         _instance = instance;
@@ -45,7 +46,9 @@ public class Message implements Serializable {
 
     @Override
     public String toString(){
-        return "PrepareMessage: Message: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
+        if(_type == null)
+            return "NULL BOI DE MERDA -> Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + "";
+        return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
     }
 
     @Override

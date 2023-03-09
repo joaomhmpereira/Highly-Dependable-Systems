@@ -16,28 +16,15 @@ public class BroadcastManager
     // attributes that are known to everyother guy 
     private PerfectAuthChannel _channel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
-    private Hashtable<Message, DoubleEchoBroadcast> _prePrepHashtable;
-    private Hashtable<Message, DoubleEchoBroadcast> _prepareHashtable;
-    private Hashtable<Message, DoubleEchoBroadcast> _commitHashtable;
-    private int _leader; 
-    private int _F; 
-    private int _numNeighbours;
-    private int _N;
     private Server _server;
     private IBFT _ibft;
     // private 
 
-    public BroadcastManager(IBFT ibft, PerfectAuthChannel channel, Server server, Hashtable<Integer, Integer> neighbours,
-                    int leader, int faulty, int numberNodes, int numberNeighbours){
+    public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
-        _channel = channel;
         _server = server;
         _broadcastNeighbors = neighbours;
-        _F = faulty;
-        _N = numberNodes;
-        _numNeighbours = numberNeighbours;
-
-        _channel.setBroadcastManager(this);
+        _channel = new PerfectAuthChannel(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
     } 
 
     /**
@@ -47,32 +34,34 @@ public class BroadcastManager
      * object of that type in our database
      */
     public void receivedMessage(Message msg){
-        /**
-            String type = message.getType();
-            switch(type){
-                case "pre-prepare":
-                    if(sub_type == "send"){
-                        if(ja houver um double echo broadcast para esse){
-                            broadcast.receviedSendMessage(msg);
-                        }
-                        else{
-                            create new broadcast 
-                        }
-                    } else if(){
-                        
-                    }
-                case "prepare":
-                    if(sub_type == "send"){
-                        // se nao houver ainda para esse criar um novo double echo broadcast
-                    }
-                case "commit":
-                    if(sub_type == "send"){
-                        // se nao houver ainda para esse criar um novo double echo broadcast
-                    }
-            }
-        
-        */
+        String type = msg.getType();
+        switch(type){
+            case "pre-prepare":
+                _ibft.receivePrePrepare(msg);
+                break;
+            case "prepare":
+                _ibft.receivePrepare(msg);
+                break;
+            case "commit":
+                _ibft.receiveCommit(msg);
+                break;
+        }
     }
 
-
+    /**
+     * sends a message to every server
+     */
+    public void sendBroadcast(Message msg){
+        // send message to all
+        InetAddress destAddr;
+        try {
+            destAddr = InetAddress.getByName("127.0.0.1");
+            // for(int i = 0; i < _numNeighbours; i++){ tava assim
+            for(int i = 0; i < _broadcastNeighbors.size(); i++){ // send to all servers 
+                _channel.sendMessage(destAddr, _broadcastNeighbors.get(i), msg);
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } // just localhost
+    }
 }

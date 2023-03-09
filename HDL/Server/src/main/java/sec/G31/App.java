@@ -31,18 +31,19 @@ public class App
 		final int serverPort = Integer.parseInt(args[2]);
         final String faultType = args[3];
         final String leaderFlag = args[4];
+        final int numF = 1;
 
-        Server server = initServer(serverId, serverAddress, serverPort, faultType, leaderFlag);
+        Server server = initServer(serverId, serverAddress, serverPort, faultType, leaderFlag, numF);
         LOGGER.info("Server created: " + server.toString());
         // reading from the configuration file
         try {
-            readFromFile(args[5], server);
+            readFromFile(args[5], server, leaderFlag);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void readFromFile(String configFile, Server server) throws IOException{
+    public static void readFromFile(String configFile, Server server, String leaderFlag) throws IOException{
         try {
             File myObj = new File(configFile);
             Scanner myReader = new Scanner(myObj);
@@ -57,7 +58,13 @@ public class App
                 //}
             }
             myReader.close();
-            //BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            
+            if (leaderFlag.equals("Y")) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                System.out.println("Enter the value to be sent: ");
+                String msg = reader.readLine();
+                server.startIBFT(msg);                
+            }
 
             // trying to send a message
             //String destAddr = "127.0.0.1";
@@ -81,9 +88,9 @@ public class App
         }
     }
 
-    public static Server initServer(int serverId, String address, int port, String faultType, String leaderFlag){
+    public static Server initServer(int serverId, String address, int port, String faultType, String leaderFlag, int numF){
         try {
-            return new Server(serverId, InetAddress.getByName(address), port, faultType, leaderFlag);
+            return new Server(serverId, InetAddress.getByName(address), port, faultType, leaderFlag, numF);
         } catch (UnknownHostException e) {
             e.printStackTrace();
             System.exit(1);

@@ -2,6 +2,8 @@ package sec.G31;
 import java.util.logging.Logger;
 import java.net.*;
 import sec.G31.messages.Message;
+import java.util.Hashtable;
+
 
 /**
  * TO-DO: implementar a autenticacao
@@ -14,13 +16,16 @@ public class PerfectAuthChannel
     private InetAddress _address; 
     private int _port;
     private BroadcastManager _broadcastManager;
-    // private <msg, doubleEcho's> 
+    private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
 
-    public PerfectAuthChannel(Server server, InetAddress serverAddress, int serverPort){
+    public PerfectAuthChannel(BroadcastManager broadcastManager, Server server, InetAddress serverAddress, int serverPort,
+                    Hashtable<Integer, Integer> broadcastNeighbours){
         _server = server;
         _address = serverAddress;
         _port = serverPort;
         _stubChannel = new StubbornChannel(this, _address, _port);
+        _broadcastManager = broadcastManager;
+        _broadcastNeighbors = broadcastNeighbours;
     }
 
     public void sendMessage(InetAddress destAddress, int destPort, Message msg){
@@ -30,10 +35,10 @@ public class PerfectAuthChannel
 
     public void receivedMessage(Message msg, int port, InetAddress address){
         LOGGER.info("PAC:: received message");
-        //_server.receivedMessage(msg, port, address);
 
-        // TO-DO deve ser um objeto 
-        _broadcastManager.receivedMessage(msg); 
+        // verify that it has came from the correct port 
+        if(_broadcastNeighbors.get(msg.getSenderId()) == port)
+            _broadcastManager.receivedMessage(msg);         // inform the upper layer 
     }
 
     public void setBroadcastManager(BroadcastManager manager){

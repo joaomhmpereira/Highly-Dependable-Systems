@@ -10,21 +10,27 @@ public class Server
     private InetAddress _address;
     private String _faultType;
     private String _leaderFlag;
+    private int _instance;      // the instance number of the blockchain
     private int _port;
-    //private PerfectAuthChannel _channel;
+    private int _F;
     private IBFT _ibft;
-    // <server id, port>
-    private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>();
+    private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>(); // <server id, port>
 
     public Server(int serverId,InetAddress serverAddress, int serverPort,
-                 String faultType, String leaderFlag){
+                 String faultType, String leaderFlag, int numFaulty){
         _id = serverId;
+        _instance = 1;      // it starts with instance 0 for now 
         _address = serverAddress;
         _port = serverPort;
+        _F = numFaulty;
         //_channel = new PerfectAuthChannel(this, _address, _port);
-        _ibft = new IBFT(this);
+        _ibft = new IBFT(this, numFaulty); // TO-DO: send the number of faulty nodes
         _faultType = faultType;
         _leaderFlag = leaderFlag;
+    }
+
+    public void startIBFT(String value){
+        _ibft.start(value, _instance);
     }
 
     public InetAddress getAddress(){
@@ -37,13 +43,17 @@ public class Server
 
     public int getId() {
         return _id;
-        }
+    }
+
+    public Hashtable<Integer, Integer> getBroadcastNeighbours(){
+        return _myNeighbors;
+    }
 
     public void newNeighbor(int neighborId, int neighborPort) {
         _myNeighbors.put(neighborId, neighborPort); // ver se da int para a hashtable
     }
     
-    boolean isLeader(int currentRound) {
+    public boolean isLeader(int currentRound) {
         return _leaderFlag.equals("Y");
     }
 
@@ -53,9 +63,8 @@ public class Server
 
     public void sendMessage(String destServer, int destPort, String msg){
         LOGGER.info("SERVER:: " + destServer + " " + destPort + " " + msg);
-        InetAddress serverAddress;
         try {
-            serverAddress = InetAddress.getByName(destServer);
+            InetAddress serverAddress = InetAddress.getByName(destServer);
             //_channel.sendMessage(serverAddress, destPort, msg);
         } catch (UnknownHostException e) {
             e.printStackTrace();

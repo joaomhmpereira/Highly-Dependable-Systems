@@ -40,15 +40,17 @@ public class StubbornChannel
             }
 
             public void run(){
-                while(true){
-                    System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                    _udpChannel.sendMessage(_dest, _port, _msg);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                //while(true){
+                //    System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                //    _udpChannel.sendMessage(_dest, _port, _msg);
+                //    try {
+                //        Thread.sleep(500);
+                //    } catch (InterruptedException e) {
+                //        e.printStackTrace();
+                //    }
+                //}
+                //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                _udpChannel.sendMessage(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
@@ -61,7 +63,7 @@ public class StubbornChannel
     
 
     public void receivedMessage(Message msg, int port, InetAddress address){
-        LOGGER.info("SC:: received message");
+        //LOGGER.info("SC:: received message");
         _pac.receivedMessage(msg, port, address);
     }
 }

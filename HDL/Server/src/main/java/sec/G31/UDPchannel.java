@@ -27,7 +27,7 @@ public class UDPchannel
 
     public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         try{
-            LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
+            //LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
             _client = new UDPclient(destAddress, destPort, _socket, msg);
         }catch(IOException e){
             System.out.println("Error while sending message");
@@ -36,7 +36,7 @@ public class UDPchannel
     }
 
     public void receivedMessage(Message msg, int port, InetAddress address){
-        LOGGER.info("UDP:: received message");
+        //LOGGER.info("UDP:: received message");
         _channel.receivedMessage(msg, port, address);
     }
 

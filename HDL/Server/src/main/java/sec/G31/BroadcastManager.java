@@ -34,16 +34,19 @@ public class BroadcastManager
      * object of that type in our database
      */
     public void receivedMessage(Message msg){
-        System.out.println(msg.toString());
+        //System.out.println(msg.toString());
         String type = msg.getType();
         switch(type){
             case "PRE-PREPARE":
+                System.out.println("received pre-prepare: " + msg.toString());
                 _ibft.receivePrePrepare(msg);
                 break;
             case "PREPARE":
+                System.out.println("received prepare: " + msg.toString());
                 _ibft.receivePrepare(msg);
                 break;
             case "COMMIT":
+                System.out.println("received commit: " + msg.toString());
                 _ibft.receiveCommit(msg);
                 break;
         }

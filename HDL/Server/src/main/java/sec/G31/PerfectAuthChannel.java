@@ -29,12 +29,12 @@ public class PerfectAuthChannel
     }
 
     public void sendMessage(InetAddress destAddress, int destPort, Message msg){
-        LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
+        //LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
         _stubChannel.sendMessage(destAddress, destPort, msg);
     }
 
     public void receivedMessage(Message msg, int port, InetAddress address){
-        LOGGER.info("PAC:: received message");
+        //LOGGER.info("PAC:: received message");
 
         // verify that it has came from the correct port 
         if(_broadcastNeighbors.get(msg.getSenderId()) == port)

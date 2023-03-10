@@ -61,7 +61,7 @@ public class UDPserver extends Thread{
 
             /** it will run in a separate thread */
             public void run(){
-                System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg);
+                //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg);
                 _channel.receivedMessage(_msg, _port, _address);
             }
         }
@@ -86,7 +86,7 @@ public class UDPserver extends Thread{
                 byte[] clientData = clientPacket.getData();
             
                 //System.out.printf("Received from: %s:%d %n", clientAddress, clientPort);
-                LOGGER.info("Received from: " + clientAddress + ":" + clientPort);
+                //LOGGER.info("Received from: " + clientAddress + ":" + clientPort);
                 //System.out.printf("Received bytes: %d %n", clientLength);
                 // this will usually be smaller than the buffer size
                 //System.out.printf("Receive buffer size: %d %n", clientData.length);
@@ -95,7 +95,7 @@ public class UDPserver extends Thread{
 
                 //String clientText = new String(clientData, 0, clientLength);
                 //System.out.println("Received text: " + clientText);
-                LOGGER.info("Received : " + message.toString());
+                //LOGGER.info("Received : " + message.toString());
             
                 //if (END_MESSAGE.equals(clientText)) {
                 //    // this will be the last reply from the server
@@ -110,7 +110,7 @@ public class UDPserver extends Thread{
 
             // Close socket (this will also close the socket used by the client)
             _socket.close();
-            LOGGER.info("Closed socket");
+            //LOGGER.info("Closed socket");
             //System.out.println("Closed socket");
         } catch( IOException e){
             System.out.println("Error on UDP server");

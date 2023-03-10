@@ -89,7 +89,13 @@ public class IBFT
 
     public void sendPrepares(int instance, int round, String value){
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
-        Message prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
+        Message prepareMessage;
+        if (_server.isFaulty()){
+            prepareMessage = new Message(PREPARE_MSG, instance, round, "VALUE DIFERENTE", _server.getId());
+            
+        } else {
+            prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
+        }
         _broadcast.sendBroadcast(prepareMessage);
     }
 
@@ -109,7 +115,7 @@ public class IBFT
     public void receivedCommitQuorum(Message msg){
         // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
-        //LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
+        LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
         System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
     }
 
@@ -140,15 +146,21 @@ public class IBFT
             String value = msg.getValue();
             //update the quorum or insert new entry if it isn't there
             // if still no one had sent commit
-            if (!_prepareQuorum.containsKey(value)) {
-                _prepareQuorum.put(value, new ArrayList<Integer>());
-            } else {
-                ArrayList<Integer> list = _prepareQuorum.get(value);
-                if(!list.contains(msg.getSenderId())){
+            synchronized(this){
+                if (!_prepareQuorum.containsKey(value)) {
+                    ArrayList<Integer> list = new ArrayList<Integer>();
                     list.add(msg.getSenderId());
                     _prepareQuorum.put(value, list);
+                } else {
+                    ArrayList<Integer> list = _prepareQuorum.get(value);
+                    if(!list.contains(msg.getSenderId())){
+                        list.add(msg.getSenderId());
+                        _prepareQuorum.put(value, list);
+                    }
                 }
             }
+
+            System.out.println("Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
             
             // only send one commit if we have already quorum
             if(_prepareQuorum.get(value).size() >= 2*_F+1 && _sentCommit == false){ // in case of quorum
@@ -167,16 +179,21 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound){
             String value = msg.getValue();
             
-            // if still no one had sent commit
-            if (!_commitQuorum.containsKey(value)) {
-                _commitQuorum.put(value, new ArrayList<Integer>());
-            } else {
-                ArrayList<Integer> list = _commitQuorum.get(value);
-                if(!list.contains(msg.getSenderId())){
+            synchronized(this){
+                // if still no one had sent commit
+                if (!_commitQuorum.containsKey(value)) {
+                    ArrayList<Integer> list = new ArrayList<Integer>();
                     list.add(msg.getSenderId());
                     _commitQuorum.put(value, list);
+                } else {
+                    ArrayList<Integer> list = _commitQuorum.get(value);
+                    if(!list.contains(msg.getSenderId())){
+                        list.add(msg.getSenderId());
+                        _commitQuorum.put(value, list);
+                    }
                 }
             }
+            
             
             System.out.println("Commit quorum size: " + _commitQuorum.get(value).size());
 

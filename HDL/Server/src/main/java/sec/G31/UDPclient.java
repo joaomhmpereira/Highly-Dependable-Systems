@@ -14,14 +14,14 @@ public class UDPclient
 
 		// Text is sent to server as bytes
 		byte[] clientBuffer = SerializationUtils.serialize(msg);
-		System.out.printf("%d bytes to send%n", clientBuffer.length);
+		//System.out.printf("%d bytes to send%n", clientBuffer.length);
 
 		DatagramPacket clientPacket = new DatagramPacket(clientBuffer, clientBuffer.length, serverAddress, port);
-		System.out.printf("Send to: %s:%d %n", serverAddress.toString(), port);
+		//System.out.printf("Send to: %s:%d %n", serverAddress.toString(), port);
 		socket.send(clientPacket);
 		//System.out.println("Sent packet: " + clientPacket.toString());
 
-		System.out.println("Socket closed");
+		//System.out.println("Socket closed");
 	}
 
 }

@@ -20,8 +20,8 @@ public class App
          */
 
         // Check if the number of arguments is correct
-        if (args.length != 6) {
-            System.out.println("Usage: java App <serverId> <serverAddress> <serverPort> <faultType> <leaderFlag> <configFile>");
+        if (args.length != 7) {
+            System.out.println("Usage: java App <serverId> <serverAddress> <serverPort> <faultType> <leaderFlag> <numFaulties> <configFile>");
             System.exit(1);
         }
 
@@ -31,13 +31,13 @@ public class App
 		final int serverPort = Integer.parseInt(args[2]);
         final String faultType = args[3];
         final String leaderFlag = args[4];
-        final int numF = 1;
+        final int numF = Integer.parseInt(args[5]); // ou podemos mandar um ficheiro com o num la dentro, depois decidam
 
         Server server = initServer(serverId, serverAddress, serverPort, faultType, leaderFlag, numF);
         LOGGER.info("Server created: " + server.toString());
         // reading from the configuration file
         try {
-            readFromFile(args[5], server, leaderFlag);
+            readFromFile(args[6], server, leaderFlag);
         } catch (IOException e) {
             e.printStackTrace();
         }

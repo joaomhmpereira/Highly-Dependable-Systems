@@ -2,6 +2,7 @@ package sec.G31;
 
 import java.util.logging.Logger;
 import java.util.Hashtable;
+import java.util.List;
 import sec.G31.messages.Message;
 import java.util.ArrayList;
 
@@ -32,6 +33,7 @@ public class IBFT
     private boolean _decided;
     private int _numCommitsReceived; // 
     private int _F; // faulty nodes
+    private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
     private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of guys that sent us prepare> 
     private Hashtable<String, ArrayList<Integer>> _commitQuorum; // <value, list of guys that sent us commit> 
     private final String PREPARE_MSG = "PREPARE";
@@ -126,11 +128,12 @@ public class IBFT
     public void receivePrePrepare(Message msg){
         // verificar a autenticacao e no perfect channel
 
-        // if if it's from the leader of this round and instance
+        // if it's from the leader of this round and instance
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound && 
                 msg.getSenderId() == _leader){
             // set timer to running
             _sentPrepare = true;
+            _receivedMessages.add(msg);
             this.sendPrepares(_instance, _currentRound, msg.getValue());
         }
     }
@@ -142,10 +145,13 @@ public class IBFT
         // verificar a autenticacao no perfect channel
         
         // if it's the same round and instance as ours
-        if(msg.getInstance() == _instance && msg.getRound() == _currentRound){
+        // and has not received the message yet
+        if(msg.getInstance() == _instance && msg.getRound() == _currentRound
+                && !_receivedMessages.contains(msg)){
+            _receivedMessages.add(msg);
             String value = msg.getValue();
             //update the quorum or insert new entry if it isn't there
-            // if still no one had sent commit
+            // if still no one had sent prepare
             synchronized(this){
                 if (!_prepareQuorum.containsKey(value)) {
                     ArrayList<Integer> list = new ArrayList<Integer>();
@@ -176,7 +182,11 @@ public class IBFT
     public void receiveCommit(Message msg){
         // verificar a autenticacao no perfect channel 
 
-        if(msg.getInstance() == _instance && msg.getRound() == _currentRound){
+        // if it's the same round and instance as ours
+        // and has not received the message yet
+        if(msg.getInstance() == _instance && msg.getRound() == _currentRound
+                && !_receivedMessages.contains(msg)){
+            _receivedMessages.add(msg);
             String value = msg.getValue();
             
             synchronized(this){

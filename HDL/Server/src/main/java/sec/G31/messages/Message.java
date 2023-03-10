@@ -47,7 +47,7 @@ public class Message implements Serializable {
     @Override
     public String toString(){
         if(_type == null)
-            return "NULL BOI DE MERDA -> Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + "";
+            return "NULL -> Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + "";
         return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
     }
 

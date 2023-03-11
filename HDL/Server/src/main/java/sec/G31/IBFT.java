@@ -130,7 +130,7 @@ public class IBFT
 
         // if it's from the leader of this round and instance
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound && 
-                msg.getSenderId() == _leader){
+                msg.getSenderId() == _leader && !_receivedMessages.contains(msg)){
             // set timer to running
             _sentPrepare = true;
             _receivedMessages.add(msg);

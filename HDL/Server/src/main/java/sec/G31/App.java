@@ -12,13 +12,7 @@ public class App
     private final static Logger LOGGER = Logger.getLogger(App.class.getName());
 
     public static void main(String[] args)
-    {
-        System.out.println("Hello World!");
-        /**
-         * Input received in the form of:
-         * serverId, serverAddress, serverPort, faultType, leader (?) 
-         */
-
+    {   
         // Check if the number of arguments is correct
         if (args.length != 7) {
             System.out.println("Usage: java App <serverId> <serverAddress> <serverPort> <faultType> <leaderFlag> <numFaulties> <configFile>");
@@ -38,29 +32,49 @@ public class App
         // reading from the configuration file
         try {
             readFromFile(args[6], server, leaderFlag);
+            // while(true)
+            //     readFromFile("System.in", server, leaderFlag);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void readFromFile(String configFile, Server server, String leaderFlag) throws IOException{
+    public static void readFromFile(String file, Server server, String leaderFlag) throws IOException{
         try {
-            File myObj = new File(configFile);
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNextLine()) {
-                String data = myReader.nextLine();
-                String delimSpace = " ";
-                String[] arr  = data.split(delimSpace);
-                //if (server.getId() != Integer.parseInt(arr[0]))
-                server.newNeighbor(Integer.parseInt(arr[0]), Integer.parseInt(arr[2])); // include our own server in the hashtable
-                //for (String str : arr) {
-                //    LOGGER.info(str);
-                //}
-            }
-            myReader.close();
-            
-            LOGGER.info("Starting IBFT");
-            server.startIBFT("MENSAGEM");                
+            if(file.equals("fileConfig.txt")){
+                File myObj = new File(file);
+                Scanner myReader = new Scanner(myObj);
+                while (myReader.hasNextLine()) {
+                    String data = myReader.nextLine();
+                    String delimSpace = " ";
+                    String[] arr  = data.split(delimSpace);
+                    //if (server.getId() != Integer.parseInt(arr[0]))
+                    server.newNeighbor(Integer.parseInt(arr[0]), Integer.parseInt(arr[2])); // include our own server in the hashtable
+                    //for (String str : arr) {
+                    //    LOGGER.info(str);
+                    //}
+                }
+                myReader.close();
+
+                LOGGER.info("Starting IBFT");
+                server.startIBFT("START_MESSAGE");
+            } 
+
+            // nao funciona:
+            // else if(file.equals("System.in")){
+            //     Scanner myReader = new Scanner(System.in);
+            //     System.out.println("New Message:");
+            //     String message = ".";
+            //     for (int i = 0; i < 1; i++){
+            //         message = message + myReader.nextLine();
+            //     }
+            //     myReader.close();
+
+            //     LOGGER.info("Starting new IBFT");
+            //     server.startIBFT(message);
+            // }
+
+
 
             // trying to send a message
             //String destAddr = "127.0.0.1";

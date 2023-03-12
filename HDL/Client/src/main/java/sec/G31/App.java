@@ -22,7 +22,7 @@ public class App
         int _clientPort;
 
         
-        System.out.println("===Hello Client " + _clientId + " ===");
+        System.out.println("=== Hello Client " + _clientId + " ===");
 
         // LOGGER.info("Server created: " + server.toString());
 

@@ -34,6 +34,10 @@ public class Server
         _ibft.start(value, _instance);
     }
 
+    public IBFT getIBFT(){
+        return _ibft;
+    }
+
     public InetAddress getAddress(){
         return _address;
     }

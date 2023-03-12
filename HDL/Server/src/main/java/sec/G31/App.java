@@ -4,12 +4,25 @@ import java.io.*;
 import java.util.Scanner;
 import java.net.*;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.*;
-import sec.G31.messages.Message;
 
 public class App
 {
     private final static Logger LOGGER = Logger.getLogger(App.class.getName());
+
+    private Server _server;
+
+    /**
+     * Constructor for the App class (mainly to use in the tests)
+     */
+    public App(int serverId, String serverAddress, int serverPort, String faultType, String leaderFlag, int numF, String configFile, String messageToSend)
+    {
+        _server = initServer(serverId, serverAddress, serverPort, faultType, leaderFlag, numF);
+        try {
+            App.readFromFile(configFile, _server, leaderFlag, messageToSend);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args)
     {   
@@ -31,7 +44,7 @@ public class App
         LOGGER.info("Server created: " + server.toString());
         // reading from the configuration file
         try {
-            readFromFile(args[6], server, leaderFlag);
+            readFromFile(args[6], server, leaderFlag, "OLA");
             // while(true)
             //     readFromFile("System.in", server, leaderFlag);
         } catch (IOException e) {
@@ -39,60 +52,22 @@ public class App
         }
     }
 
-    public static void readFromFile(String file, Server server, String leaderFlag) throws IOException{
+    public static void readFromFile(String file, Server server, String leaderFlag, String messageToSend) throws IOException{
         try {
-            if(file.equals("fileConfig.txt")){
-                File myObj = new File(file);
-                Scanner myReader = new Scanner(myObj);
-                while (myReader.hasNextLine()) {
-                    String data = myReader.nextLine();
-                    String delimSpace = " ";
-                    String[] arr  = data.split(delimSpace);
-                    //if (server.getId() != Integer.parseInt(arr[0]))
-                    server.newNeighbor(Integer.parseInt(arr[0]), Integer.parseInt(arr[2])); // include our own server in the hashtable
-                    //for (String str : arr) {
-                    //    LOGGER.info(str);
-                    //}
-                }
-                myReader.close();
+        
+            File myObj = new File(file);
+            Scanner myReader = new Scanner(myObj);
+            while (myReader.hasNextLine()) {
+                String data = myReader.nextLine();
+                String delimSpace = " ";
+                String[] arr  = data.split(delimSpace);
+                server.newNeighbor(Integer.parseInt(arr[0]), Integer.parseInt(arr[2])); // include our own server in the hashtable
+            }
+            myReader.close();
 
-                LOGGER.info("Starting IBFT");
-                server.startIBFT("START_MESSAGE");
-            } 
-
-            // nao funciona:
-            // else if(file.equals("System.in")){
-            //     Scanner myReader = new Scanner(System.in);
-            //     System.out.println("New Message:");
-            //     String message = ".";
-            //     for (int i = 0; i < 1; i++){
-            //         message = message + myReader.nextLine();
-            //     }
-            //     myReader.close();
-
-            //     LOGGER.info("Starting new IBFT");
-            //     server.startIBFT(message);
-            // }
-
-
-
-            // trying to send a message
-            //String destAddr = "127.0.0.1";
-            //int destPort = 4446;
-            //Message prepareMessage = new Message("PREPARE", 1, "Ola");
-            //byte[] data = SerializationUtils.serialize(prepareMessage);
-            
-            
-            //while(!msg.equals("end")){
-            //    // Reading data using readLine
-            //    try {
-            //        // Enter data using BufferReader
-            //        msg = reader.readLine();
-            //    } catch (IOException e) {
-            //        e.printStackTrace();
-            //    }
-            //    server.sendMessage(destAddr, destPort, msg);
-            //}
+            LOGGER.info("Starting IBFT");
+            server.startIBFT(messageToSend);
+        
         } catch (FileNotFoundException e){
             e.printStackTrace();
         }
@@ -106,5 +81,9 @@ public class App
             System.exit(1);
         }
         return null;
+    }
+
+    public Server getServer() {
+        return _server;
     }
 }

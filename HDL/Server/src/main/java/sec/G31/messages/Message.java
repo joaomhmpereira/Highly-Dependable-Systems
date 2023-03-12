@@ -4,15 +4,12 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     private String _type;
-    private String _broadcastType;
     private int _instance;
     private int _round;
-    //private int _sequenceNumber;
     private String _value;
     private int _senderId;
 
     public Message(String type, int instance, int round, String value, int senderId){
-        //_sequenceNumber = sequenceNumber;
         _type = type;
         _value = value;
         _round = round;
@@ -23,10 +20,6 @@ public class Message implements Serializable {
     public String getType(){
         return _type;
     }
-
-    //public int getSequenceNumber(){
-    //    return _sequenceNumber;
-    //}
 
     public String getValue(){
         return _value;
@@ -46,8 +39,6 @@ public class Message implements Serializable {
 
     @Override
     public String toString(){
-        if(_type == null)
-            return "NULL -> Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + "";
         return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
     }
 

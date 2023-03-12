@@ -40,6 +40,8 @@ public class IBFT
     private final String PRE_PREPARE_MSG = "PRE-PREPARE";
     private final String COMMIT_MSG = "COMMIT";
 
+
+    private String _decidedValue;
     
 
     // manager.newPrePrepareBroadcast(msg)
@@ -116,7 +118,8 @@ public class IBFT
         // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
         LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
-        System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
+        //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
+        _decidedValue = msg.getValue();
     }
 
 
@@ -211,5 +214,9 @@ public class IBFT
                 this.receivedCommitQuorum(msg); // we received a quorum
             }
         }
+    }
+
+    public String getDecidedValue(){
+        return _decidedValue;
     }
 }

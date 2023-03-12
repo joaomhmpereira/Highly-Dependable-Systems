@@ -79,9 +79,7 @@ public class IBFT
         //_preparedRound = null;
         //_preparedValue = null;
 
-        // ze/joazoca se for faulty e mudar o server id para 1 é possivel?
-
-        if(_server.getId() == _leader){  // if it's the leader
+        if(_server.getId() == _leader){ // if it's the leader
             Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId());
             _broadcast.sendBroadcast(prePrepareMessage);
         }

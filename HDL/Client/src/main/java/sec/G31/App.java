@@ -1,4 +1,6 @@
 package sec.G31;
+// import SEC.HDS.Server.src.main.java.sec.G31.*;
+// import SEC.HDL.Server.src.main.java.sec.G31.messages.Message;
 
 import java.util.Scanner;
 
@@ -10,8 +12,6 @@ public class App
 {
     public static void main( String[] args )
     {
-        System.out.println("===Client created===");
-
         // Check if the number of arguments is correct
         if (args.length != 1) {
             System.out.println("Usage: java App <clientId>");
@@ -22,13 +22,14 @@ public class App
         int _clientPort;
 
         
+        System.out.println("===Hello Client " + _clientId + " ===");
 
         // LOGGER.info("Server created: " + server.toString());
 
         Scanner inputScanner = new Scanner(System.in);
         System.out.print("Enter a new message:");
         String newMessage = inputScanner.nextLine();
-        System.out.println("You entered: " + newMessage);
+        System.out.println("You entered:" + newMessage);
         
         inputScanner.close();
     }

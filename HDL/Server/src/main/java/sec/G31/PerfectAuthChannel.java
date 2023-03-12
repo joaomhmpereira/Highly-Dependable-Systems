@@ -1,7 +1,7 @@
 package sec.G31;
+import sec.G31.messages.Message;
 import java.util.logging.Logger;
 import java.net.*;
-import sec.G31.messages.Message;
 import java.util.Hashtable;
 
 

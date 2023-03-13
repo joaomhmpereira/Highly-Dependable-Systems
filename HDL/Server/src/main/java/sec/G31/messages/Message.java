@@ -8,8 +8,9 @@ public class Message implements Serializable {
     private int _round;
     private String _value;
     private int _senderId;
+    private String _cipheredDigest;
 
-    public Message(String type, int instance, int round, String value, int senderId){
+    public Message(String type, int instance, int round, String value, int senderId) {
         _type = type;
         _value = value;
         _round = round;
@@ -17,38 +18,50 @@ public class Message implements Serializable {
         _senderId = senderId;
     }
 
-    public String getType(){
+    public String getType() {
         return _type;
     }
 
-    public String getValue(){
+    public String getValue() {
         return _value;
     }
-    
-    public int getSenderId(){
+
+    public int getSenderId() {
         return _senderId;
     }
 
-    public int getRound(){
+    public int getRound() {
         return _round;
     }
 
-    public int getInstance(){
+    public int getInstance() {
         return _instance;
     }
 
+    public String getCipheredDigest() {
+        return _cipheredDigest;
+    }
+
+    public void setCipheredDigest(String cipheredDigest) {
+        _cipheredDigest = cipheredDigest;
+    }
+
+    public String stringForDigest() {
+        return _type + "." + _value + "." + _round + "." + _instance + "." + _senderId;
+    }
+
     @Override
-    public String toString(){
+    public String toString() {
         return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
     }
 
     @Override
-    public boolean equals(Object obj){
-        if(!(obj instanceof Message)){
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Message)) {
             return false;
         }
         Message msg = (Message) obj;
         return msg._value.equals(_value) && msg._type.equals(_type)
-         && msg._round == _round && msg._instance == _instance && msg._senderId == _senderId;
+                && msg._round == _round && msg._instance == _instance && msg._senderId == _senderId;
     }
 }

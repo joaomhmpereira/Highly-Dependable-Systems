@@ -1,16 +1,16 @@
-package sec.G31;
+package sec.G31.client;
 
 import java.io.*;
 import java.net.*;
 
 import org.apache.commons.lang3.SerializationUtils;
 
-import sec.G31.messages.InitInstance;
+import sec.G31.messages.Message;
 
 public class UDPClientClient
 {
 
-	public UDPClientClient(InetAddress serverAddress, int port, DatagramSocket socket, InitInstance msg) throws IOException {
+	public UDPClientClient(InetAddress serverAddress, int port, DatagramSocket socket, Message msg) throws IOException {
 
 		// Text is sent to server as bytes
 		byte[] clientBuffer = SerializationUtils.serialize(msg);

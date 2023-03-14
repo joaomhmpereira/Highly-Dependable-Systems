@@ -1,4 +1,4 @@
-package sec.G31;
+package sec.G31.client;
 import java.net.*;
 import java.util.Hashtable;
 import sec.G31.messages.*;
@@ -16,9 +16,12 @@ public class BroadcastManagerClient
     // attributes that are known to everyother guy 
     private Hashtable<Integer, Integer> _broadcastServers;
     private PerfectAuthClient _channel;
+    private int _clientId;
 
-    public BroadcastManagerClient(Hashtable<Integer, Integer> servers){
+    public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId){
+        _channel = new PerfectAuthClient(this, address, port, servers);
         _broadcastServers = servers;
+        _clientId = clientId;
     }
 
     public void receivedMessage(DecidedMessage msg){
@@ -30,14 +33,22 @@ public class BroadcastManagerClient
     /**
      * sends a message to every server
      */
-    public void sendBroadcast(InitInstance msg){
+    public void sendBroadcast(Message msg){
+        //System.out.println("sending broadcast message: " + msg.toString());
+        //System.out.println("to servers: " + _broadcastServers.toString());
+        //System.out.println("size: " + _broadcastServers.size());
         try {
             InetAddress destAddr = InetAddress.getByName("127.0.0.1");
             for(int i = 1; i <= _broadcastServers.size(); i++){ // send to all servers 
+                //System.out.println("sending to server on port: " + _broadcastServers.get(i));
                 _channel.sendMessage(destAddr, _broadcastServers.get(i), msg);
             }
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getClientId(){
+        return _clientId;
     }
 }

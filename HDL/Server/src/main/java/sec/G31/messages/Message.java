@@ -8,14 +8,16 @@ public class Message implements Serializable {
     private int _round;
     private String _value;
     private int _senderId;
+    private int _senderPort;
     private String _cipheredDigest;
 
-    public Message(String type, int instance, int round, String value, int senderId) {
+    public Message(String type, int instance, int round, String value, int senderId, int senderPort) {
         _type = type;
         _value = value;
         _round = round;
         _instance = instance;
         _senderId = senderId;
+        _senderPort = senderPort;
     }
 
     public String getType() {
@@ -38,6 +40,10 @@ public class Message implements Serializable {
         return _instance;
     }
 
+    public int getSenderPort(){
+        return _senderPort;
+    }
+
     public String getCipheredDigest() {
         return _cipheredDigest;
     }
@@ -47,12 +53,12 @@ public class Message implements Serializable {
     }
 
     public String stringForDigest() {
-        return _type + "." + _value + "." + _round + "." + _instance + "." + _senderId;
+        return _type + "." + _value + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort;
     }
 
     @Override
     public String toString() {
-        return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId;
+        return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + " Port: " + _senderPort;
     }
 
     @Override

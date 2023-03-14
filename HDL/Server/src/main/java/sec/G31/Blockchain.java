@@ -16,4 +16,8 @@ public class Blockchain {
     public Boolean hasMessage(String msg){
         return _blockChainList.contains(msg);
     }
+
+    public int getConsensusInstance(){
+        return _blockChainList.size();
+    }
 }

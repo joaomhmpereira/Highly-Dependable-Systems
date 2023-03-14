@@ -1,4 +1,4 @@
-package sec.G31;
+package sec.G31.client;
 import java.util.logging.Logger;
 
 import sec.G31.messages.DecidedMessage;
@@ -21,7 +21,7 @@ public class UDPServerClient extends Thread{
 	 */
 	private static final int MAX_UDP_DATA_SIZE = (64 * 1024 - 1) - 8 - 20;
 
-    private final static Logger LOGGER = Logger.getLogger(UDPserver.class.getName());
+    private final static Logger LOGGER = Logger.getLogger(UDPServerClient.class.getName());
 
 	/** Buffer size for receiving a UDP packet. */
 	private static final int BUFFER_SIZE = MAX_UDP_DATA_SIZE;

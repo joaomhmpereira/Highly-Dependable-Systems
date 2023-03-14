@@ -64,8 +64,8 @@ public class App
             }
             myReader.close();
 
-            LOGGER.info("Starting IBFT");
-            server.startIBFT(messageToSend);
+            //LOGGER.info("Starting IBFT");
+            //server.startIBFT(messageToSend);
         
         } catch (FileNotFoundException e){
             e.printStackTrace();

@@ -1,9 +1,8 @@
-package sec.G31;
+package sec.G31.client;
 //import java.util.logging.Logger;
 
 import sec.G31.messages.DecidedMessage;
-import sec.G31.messages.InitInstance;
-//import sec.G31.messages.Message;
+import sec.G31.messages.Message;
 import java.io.*;
 import java.net.*;
 
@@ -27,7 +26,7 @@ public class UDPChannelClient
         }
     }
 
-    public void sendMessage(InetAddress destAddress, int destPort, InitInstance msg){
+    public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         try{
             //LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
             _client = new UDPClientClient(destAddress, destPort, _socket, msg);
@@ -38,7 +37,7 @@ public class UDPChannelClient
     }
 
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address){
-        //LOGGER.info("UDP:: received message");
+        System.out.println("UDP:: received message");
         _channel.receivedMessage(msg, port, address);
     }
 

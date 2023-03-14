@@ -46,6 +46,11 @@ public class BroadcastManager
                 System.out.println("received commit: " + msg.toString());
                 _ibft.receiveCommit(msg);
                 break;
+            case "START":
+                System.out.println("received start: " + msg.toString());
+                int instance = _ibft.getConsensusInstance() + 1;
+                System.out.println("Starting IBFT");
+                _ibft.start(msg.getValue(), instance, msg.getSenderPort());
         }
     }
 
@@ -61,5 +66,14 @@ public class BroadcastManager
         } catch (UnknownHostException e) {
             e.printStackTrace();
         } // just localhost
+    }
+
+    public void sendDecide(DecidedMessage msg, int destPort){
+        try {
+            InetAddress destAddr = InetAddress.getByName("127.0.0.1");
+            _channel.sendDecide(destAddr, destPort, msg);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 }

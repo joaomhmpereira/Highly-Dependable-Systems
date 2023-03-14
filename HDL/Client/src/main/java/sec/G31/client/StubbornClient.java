@@ -1,9 +1,9 @@
-package sec.G31;
+package sec.G31.client;
 import java.util.*;
 //import java.util.logging.Logger;
 
 import sec.G31.messages.DecidedMessage;
-import sec.G31.messages.InitInstance;
+import sec.G31.messages.Message;
 
 import java.net.*;
 
@@ -32,12 +32,12 @@ public class StubbornClient
      * @param destPort
      * @param msg
      */
-    public void sendMessage(InetAddress destAddress, int destPort, InitInstance msg){
+    public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         class StubbornSender implements Runnable{
             InetAddress _dest;
             int _port;
-            InitInstance _msg;
-            public StubbornSender(InetAddress destAddress, int destPort, InitInstance msg){
+            Message _msg;
+            public StubbornSender(InetAddress destAddress, int destPort, Message msg){
                 _dest = destAddress;
                 _port = destPort;
                 _msg = msg;
@@ -68,6 +68,7 @@ public class StubbornClient
 
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
+        System.out.println("SC:: received message");
         if (_receivedMessages.contains(msg)){
             System.out.println("SC:: received message already");
             return;

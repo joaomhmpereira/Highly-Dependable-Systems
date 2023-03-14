@@ -2,6 +2,7 @@ package sec.G31;
 import java.util.*;
 import java.util.logging.Logger;
 
+import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
 
 import java.net.*;
@@ -43,17 +44,17 @@ public class StubbornChannel
             }
 
             public void run(){
-                while(true){
-                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                    _udpChannel.sendMessage(_dest, _port, _msg);
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                //while(true){
+                //    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                //    _udpChannel.sendMessage(_dest, _port, _msg);
+                //    try {
+                //        Thread.sleep(100);
+                //    } catch (InterruptedException e) {
+                //        e.printStackTrace();
+                //    }
+                //}
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //_udpChannel.sendMessage(_dest, _port, _msg);
+                _udpChannel.sendMessage(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
@@ -63,8 +64,46 @@ public class StubbornChannel
         //_udpChannel.sendMessage(destAddress, destPort, msg);
     }
 
-    
+    /**
+     * TO-DO: Change the msg to an object with sequence numbers and seqId's 
+     *
+     * @param destAddress
+     * @param destPort
+     * @param msg
+     */
+    public void sendDecide(InetAddress destAddress, int destPort, DecidedMessage msg){
+        class StubbornSender implements Runnable{
+            InetAddress _dest;
+            int _port;
+            DecidedMessage _msg;
+            public StubbornSender(InetAddress destAddress, int destPort, DecidedMessage msg){
+                _dest = destAddress;
+                _port = destPort;
+                _msg = msg;
+            }
 
+            public void run(){
+                //while(true){
+                //    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                //    _udpChannel.sendMessage(_dest, _port, _msg);
+                //    try {
+                //        Thread.sleep(100);
+                //    } catch (InterruptedException e) {
+                //        e.printStackTrace();
+                //    }
+                //}
+                //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                _udpChannel.sendDecide(_dest, _port, _msg);
+            }
+        }
+        Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
+        t1.start();
+
+        //System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
+        //_udpChannel.sendMessage(destAddress, destPort, msg);
+    }
+
+    // TODO - no caso em que o mesmo cliente manda duas strings iguais para instancias diferentes vamos rejeitar
     public void receivedMessage(Message msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
         if (_receivedMessages.contains(msg)){

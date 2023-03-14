@@ -3,6 +3,8 @@ package sec.G31;
 import java.util.logging.Logger;
 import java.util.Hashtable;
 import java.util.List;
+
+import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
 import java.util.ArrayList;
 
@@ -28,6 +30,7 @@ public class IBFT
     private int _preparedRound;
     private String _preparedValue;
     private String _inputValue;
+    private int _clientPort;
     //private boolean _sentPrepare;
     private boolean _sentCommit; 
     private boolean _decided;
@@ -54,7 +57,7 @@ public class IBFT
      */
     public IBFT(Server server, int faultyNodes){
         _server = server;
-        _instance = 0;
+        _instance = 1;
         _currentRound = 0;
         _preparedRound = 0;
         _preparedValue = "";
@@ -72,17 +75,18 @@ public class IBFT
      * the server wants to send a new value 
      * for now there is only 1 instance and only 1 round so there is no problem
      */
-    public void start(String value, int instance){
+    public void start(String value, int instance, int clientPort){
         LOGGER.info("IBFT:: started");
 
         _inputValue = value;
         _instance = instance;
+        _clientPort = clientPort;
         //_currentRound = 1;
         //_preparedRound = null;
         //_preparedValue = null;
 
         if(_server.getId() == _leader){ // if it's the leader
-            Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId());
+            Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId(), _server.getPort());
             _broadcast.sendBroadcast(prePrepareMessage);
         }
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
@@ -93,10 +97,10 @@ public class IBFT
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()){
-            prepareMessage = new Message(PREPARE_MSG, instance, round, "DIFFERENT VALUE", 1);
+            prepareMessage = new Message(PREPARE_MSG, instance, round, "DIFFERENT VALUE", 1, _server.getPort());
             
         } else {
-            prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
+            prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId(), _server.getPort());
         }
         _broadcast.sendBroadcast(prepareMessage);
     }
@@ -107,7 +111,7 @@ public class IBFT
         _preparedValue = value;
 
 
-        Message commitMessage = new Message(COMMIT_MSG, _instance, _preparedRound, _preparedValue, _server.getId());
+        Message commitMessage = new Message(COMMIT_MSG, _instance, _preparedRound, _preparedValue, _server.getId(), _server.getPort());
         _broadcast.sendBroadcast(commitMessage);  // broadcast
     }
 
@@ -119,6 +123,11 @@ public class IBFT
         // DECIDE -> dar append da string à blockchain
         LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
         //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
+        if (_server.getId() == _leader){
+            System.out.println("SENDING DECIDE TO CLIENT");
+            DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId());
+            _broadcast.sendDecide(decideMessage, _clientPort);
+        }
         _decidedValue = msg.getValue();
         _server.addToBlockchain(_decidedValue);
     }
@@ -219,5 +228,9 @@ public class IBFT
 
     public String getDecidedValue(){
         return _decidedValue;
+    }
+
+    public int getConsensusInstance(){
+        return _server.getConsensusInstance();
     }
 }

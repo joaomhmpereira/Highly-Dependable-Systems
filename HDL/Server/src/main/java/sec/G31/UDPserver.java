@@ -62,7 +62,7 @@ public class UDPserver extends Thread{
 
             /** it will run in a separate thread */
             public void run(){
-                //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg);
+                //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg.toString());
                 _channel.receivedMessage(_msg, _port, _address);
             }
         }

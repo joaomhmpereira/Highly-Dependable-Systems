@@ -3,18 +3,17 @@ package sec.G31.messages;
 import java.io.Serializable;
 
 public class DecidedMessage implements Serializable {
-    
-    private String _msg;
+    private String _value;
     private int _senderId;
     private String _cipheredDigest;
 
-    public DecidedMessage(String msg, int senderId) {
+    public DecidedMessage(String value, int senderId) {
         _senderId = senderId;
-        _msg = msg;
+        _value = value;
     }
 
-    public String getMsg() {
-        return _msg;
+    public String getValue() {
+        return _value;
     }
 
     public int getSenderId() {
@@ -27,5 +26,18 @@ public class DecidedMessage implements Serializable {
 
     public void setCipheredDigest(String cipheredDigest) {
         _cipheredDigest = cipheredDigest;
+    }
+
+    public String stringForDigest(){
+        return _value + "." + _senderId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof DecidedMessage)) {
+            return false;
+        }
+        DecidedMessage other = (DecidedMessage) obj;
+        return other.getValue().equals(_value) && other.getSenderId() == _senderId;
     }
 }

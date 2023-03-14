@@ -1,10 +1,10 @@
-package sec.G31;
-// import SEC.HDS.Server.src.main.java.sec.G31.*;
-// import SEC.HDL.Server.src.main.java.sec.G31.messages.Message;
+package sec.G31.client;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
-import sec.G31.messages.InitInstance;
+import sec.G31.messages.Message;
 
 /**
  * Hello world!
@@ -51,20 +51,30 @@ public class AppClient
     public static void main( String[] args )
     {
         // Check if the number of arguments is correct
-        if (args.length != 2) {
-            System.out.println("Usage: java App <clientId> <configFile>");
+        if (args.length != 4) {
+            System.out.println("Usage: java App <clientId> <address> <port> <configFile>");
             System.exit(1);
         }
         
         int _clientId = Integer.parseInt(args[0]);
-        final String config = args[1];
+        final String _address = args[1];
+        final int _port = Integer.parseInt(args[2]);
+        final String config = args[3];
         Hashtable<Integer, Integer> _servers;
         //int _clientPort;
         System.out.println("=== Hello Client " + _clientId + " ===");
 
         try {
             _servers = readFromFile(config);
-            BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(_servers);
+
+            //print servers
+            for(int i = 1; i <= _servers.size(); i++){
+                System.out.println("Server " + i + " is listening on port " + _servers.get(i));
+            }
+
+            InetAddress addr = InetAddress.getByName(_address);
+
+            BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId);
             Scanner inputScanner = new Scanner(System.in);
             System.out.println("Enter a new message (type \"QUIT\" to end server):");
             String newMessage = "";
@@ -76,7 +86,8 @@ public class AppClient
                     break;
                 }
             
-            InitInstance msg = new InitInstance(_clientId, newMessage);
+            //InitInstance msg = new InitInstance(_clientId, newMessage);
+            Message msg = new Message("START", -1, -1, newMessage, _clientId, _port);
             // broadcast value to all servers
             _broadcastManager.sendBroadcast(msg);
         }

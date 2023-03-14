@@ -1,5 +1,6 @@
 package sec.G31;
 
+import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
 //import java.util.logging.Logger;
 import javax.crypto.*;
@@ -22,7 +23,7 @@ public class PerfectAuthChannel {
     private int _port;
     private BroadcastManager _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
-    private final String _keyPath = "keys/";
+    private final String _keyPath = "../keys/";
     private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
     private final String DIGEST_ALGO = "SHA-256";
 
@@ -67,6 +68,36 @@ public class PerfectAuthChannel {
         }
     }
 
+    public void sendDecide(InetAddress destAddress, int destPort, DecidedMessage msg){
+        try {
+            String serverKeyPath = _keyPath + _server.getId() + "/private_key.der";
+            PrivateKey key = readPrivateKey(serverKeyPath);
+
+            // plain text
+            String plainText = msg.stringForDigest();
+            byte[] plainBytes = plainText.getBytes();
+
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            // cipher data
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] cipherDigestBytes = cipher.doFinal(digestBytes); // ciphering the digest bytes
+
+            String cipherB64dString = Base64.getEncoder().encodeToString(cipherDigestBytes);
+
+            msg.setCipheredDigest(cipherB64dString); // setting the field in the Message format
+
+            // LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
+            _stubChannel.sendDecide(destAddress, destPort, msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * verifies that it has come proper authenticated and from the correct port
      */
@@ -74,10 +105,20 @@ public class PerfectAuthChannel {
         // LOGGER.info("PAC:: received message");
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (_broadcastNeighbors.get(msg.getSenderId()) == port
-                    && verifyMessage(msg))
-                _broadcastManager.receivedMessage(msg); // inform the upper layer
-
+            if (!msg.getType().equals("START")){
+                if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
+                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    _broadcastManager.receivedMessage(msg); // inform the upper layer
+                } else {
+                    System.out.println("PAC:: message from " + msg.getSenderId() + " " + msg + " was not verified");
+                }
+            } else { // if message comes from client we don't have to verify the port
+                if (verifyMessage(msg)) {
+                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    _broadcastManager.receivedMessage(msg); // inform the upper layer
+                }
+            }
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -119,7 +160,13 @@ public class PerfectAuthChannel {
      * @throws Exception
      */
     public Boolean verifyMessage(Message msg) throws Exception {
-        String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+        String serverKeyPath;
+        if (msg.getType().equals("START")){ // if it is a start message, the key is in the clients folder
+            serverKeyPath = _keyPath + "clients/" + msg.getSenderId() + "/public_key.der";
+        } else {
+            serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+        }
+        //String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
         PublicKey key = readPublicKey(serverKeyPath);
 
         // decode from B64

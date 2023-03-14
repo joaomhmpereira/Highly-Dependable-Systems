@@ -1,4 +1,4 @@
-package sec.G31;
+package sec.G31.client;
 
 import sec.G31.messages.*;
 //import java.util.logging.Logger;
@@ -18,19 +18,17 @@ import java.util.Hashtable;
 public class PerfectAuthClient {
     //private final static Logger LOGGER = Logger.getLogger(PerfectAuthChannel.class.getName());
     private StubbornClient _stubChannel;
-    private Server _server;
     private InetAddress _address;
     private int _port;
     private BroadcastManagerClient _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
-    private final String _keyPath = "keys/";
+    private final String _keyPath = "../keys/";
     private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
     private final String DIGEST_ALGO = "SHA-256";
 
-    public PerfectAuthClient(BroadcastManagerClient broadcastManager, Server server, InetAddress serverAddress,
+    public PerfectAuthClient(BroadcastManagerClient broadcastManager, InetAddress serverAddress,
             int serverPort,
             Hashtable<Integer, Integer> broadcastNeighbours) {
-        _server = server;
         _address = serverAddress;
         _port = serverPort;
         _stubChannel = new StubbornClient(this, _address, _port);
@@ -38,9 +36,9 @@ public class PerfectAuthClient {
         _broadcastNeighbors = broadcastNeighbours;
     }
 
-    public void sendMessage(InetAddress destAddress, int destPort, InitInstance msg) {
+    public void sendMessage(InetAddress destAddress, int destPort, Message msg) {
         try {
-            String serverKeyPath = _keyPath + _server.getId() + "/private_key.der";
+            String serverKeyPath = _keyPath + "clients/"  + _broadcastManager.getClientId() + "/private_key.der";
             PrivateKey key = readPrivateKey(serverKeyPath);
 
             // plain text
@@ -73,11 +71,13 @@ public class PerfectAuthClient {
      */
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
+        System.out.println("PAC:: received message");
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (_broadcastNeighbors.get(msg.getSenderId()) == port
-                    && verifyMessage(msg))
+            if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
+                System.out.println("PAC:: message verified");
                 _broadcastManager.receivedMessage(msg); // inform the upper layer
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,7 +133,7 @@ public class PerfectAuthClient {
 
         // digest the other part of message and compare to unciphered digest
         // plain text
-        String plainText = msg.getMsg();
+        String plainText = msg.stringForDigest();
         byte[] plainBytes = plainText.getBytes();
 
         // digest data

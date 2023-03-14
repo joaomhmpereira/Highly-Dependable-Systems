@@ -1,5 +1,5 @@
 package sec.G31;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 import sec.G31.messages.Message;
 import org.apache.commons.lang3.*;
@@ -21,7 +21,7 @@ public class UDPserver extends Thread{
 	 */
 	private static final int MAX_UDP_DATA_SIZE = (64 * 1024 - 1) - 8 - 20;
 
-    private final static Logger LOGGER = Logger.getLogger(UDPserver.class.getName());
+    //private final static Logger LOGGER = Logger.getLogger(UDPserver.class.getName());
 
 	/** Buffer size for receiving a UDP packet. */
 	private static final int BUFFER_SIZE = MAX_UDP_DATA_SIZE;
@@ -53,6 +53,7 @@ public class UDPserver extends Thread{
             InetAddress _address;
             int _port;
             Message _msg;
+
             public ProcessMessage(InetAddress clientAddress, int clientPort, Message msg){
                 _address = clientAddress;
                 _port = clientPort;
@@ -84,37 +85,17 @@ public class UDPserver extends Thread{
                 InetAddress clientAddress = clientPacket.getAddress();
                 int clientPort = clientPacket.getPort();
                 byte[] clientData = clientPacket.getData();
-            
-                //System.out.printf("Received from: %s:%d %n", clientAddress, clientPort);
-                //LOGGER.info("Received from: " + clientAddress + ":" + clientPort);
-                //System.out.printf("Received bytes: %d %n", clientLength);
-                // this will usually be smaller than the buffer size
-                //System.out.printf("Receive buffer size: %d %n", clientData.length);
                 
                 Message message = (Message) SerializationUtils.deserialize(clientData);
 
-                //String clientText = new String(clientData, 0, clientLength);
-                //System.out.println("Received text: " + clientText);
-                //LOGGER.info("Received : " + message.toString());
-            
-                //if (END_MESSAGE.equals(clientText)) {
-                //    // this will be the last reply from the server
-                //    System.out.println("Received END message");
-                //    running = false;
-                //}
-
-                // calling a new thread that will process the message
                 Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
                 t1.start();
             }
 
             // Close socket (this will also close the socket used by the client)
             _socket.close();
-            //LOGGER.info("Closed socket");
-            //System.out.println("Closed socket");
         } catch( IOException e){
             System.out.println("Error on UDP server");
-            LOGGER.log(java.util.logging.Level.SEVERE, "Error on UDP server");
             e.printStackTrace();
         }
     }

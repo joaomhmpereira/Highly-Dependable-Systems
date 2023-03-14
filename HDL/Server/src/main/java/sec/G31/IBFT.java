@@ -28,10 +28,10 @@ public class IBFT
     private int _preparedRound;
     private String _preparedValue;
     private String _inputValue;
-    private boolean _sentPrepare;
+    //private boolean _sentPrepare;
     private boolean _sentCommit; 
     private boolean _decided;
-    private int _numCommitsReceived; // 
+    //private int _numCommitsReceived; // 
     private int _F; // faulty nodes
     private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
     private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of guys that sent us prepare> 
@@ -62,7 +62,7 @@ public class IBFT
         _commitQuorum = new Hashtable<String, ArrayList<Integer>>();
         _broadcast = new BroadcastManager(this, server, server.getBroadcastNeighbours());
         _F = faultyNodes; 
-        _sentPrepare = false;
+        //_sentPrepare = false;
         _decided = false;
         _sentCommit = false;
         _leader = 1; // just for this implementation 
@@ -93,7 +93,7 @@ public class IBFT
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()){
-            prepareMessage = new Message(PREPARE_MSG, instance, round, "VALUE DIFERENTE", _server.getId());
+            prepareMessage = new Message(PREPARE_MSG, instance, round, "DIFFERENT VALUE", 1);
             
         } else {
             prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
@@ -120,6 +120,7 @@ public class IBFT
         LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
         //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
         _decidedValue = msg.getValue();
+        _server.addToBlockchain(_decidedValue);
     }
 
 
@@ -133,7 +134,7 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound && 
                 msg.getSenderId() == _leader && !_receivedMessages.contains(msg)){
             // set timer to running
-            _sentPrepare = true;
+            //_sentPrepare = true;
             _receivedMessages.add(msg);
             this.sendPrepares(_instance, _currentRound, msg.getValue());
         }

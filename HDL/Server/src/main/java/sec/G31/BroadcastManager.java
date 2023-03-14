@@ -1,7 +1,7 @@
 package sec.G31;
 import java.net.*;
 import java.util.Hashtable;
-import sec.G31.messages.Message;
+import sec.G31.messages.*;
 
 // nao sei se vai ter que ser uma thread actually 
 
@@ -16,13 +16,10 @@ public class BroadcastManager
     // attributes that are known to everyother guy 
     private PerfectAuthChannel _channel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
-    private Server _server;
     private IBFT _ibft;
-    // private 
 
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
-        _server = server;
         _broadcastNeighbors = neighbours;
         _channel = new PerfectAuthChannel(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
     } 

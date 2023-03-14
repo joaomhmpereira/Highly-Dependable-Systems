@@ -1,13 +1,13 @@
 package sec.G31;
 
 import sec.G31.messages.Message;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 import javax.crypto.*;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.*;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Hashtable;
 
@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * TO-DO: implementar a autenticacao
  */
 public class PerfectAuthChannel {
-    private final static Logger LOGGER = Logger.getLogger(PerfectAuthChannel.class.getName());
+    //private final static Logger LOGGER = Logger.getLogger(PerfectAuthChannel.class.getName());
     private StubbornChannel _stubChannel;
     private Server _server;
     private InetAddress _address;
@@ -23,7 +23,7 @@ public class PerfectAuthChannel {
     private BroadcastManager _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private final String _keyPath = "keys/";
-    private final String CIPHER_ALGO = "AES/ECB/PKCS5Padding";
+    private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
     private final String DIGEST_ALGO = "SHA-256";
 
     public PerfectAuthChannel(BroadcastManager broadcastManager, Server server, InetAddress serverAddress,
@@ -63,7 +63,6 @@ public class PerfectAuthChannel {
             // LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
             _stubChannel.sendMessage(destAddress, destPort, msg);
         } catch (Exception e) {
-            System.out.println(_server.getId() + " ==== ");
             e.printStackTrace();
         }
     }
@@ -120,7 +119,7 @@ public class PerfectAuthChannel {
      * @throws Exception
      */
     public Boolean verifyMessage(Message msg) throws Exception {
-        String serverKeyPath = _keyPath + msg.getSenderId() + "/public.pem";
+        String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
         PublicKey key = readPublicKey(serverKeyPath);
 
         // decode from B64
@@ -141,7 +140,6 @@ public class PerfectAuthChannel {
         messageDigest.update(plainBytes);
         byte[] digestBytes = messageDigest.digest();
 
-        return digestBytes.equals(uncipheredDigestBytes);
+        return Arrays.equals(digestBytes, uncipheredDigestBytes);
     }
-
 }

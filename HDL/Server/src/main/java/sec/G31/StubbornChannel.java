@@ -1,4 +1,5 @@
 package sec.G31;
+import java.util.*;
 import java.util.logging.Logger;
 
 import sec.G31.messages.Message;
@@ -12,6 +13,8 @@ public class StubbornChannel
     private InetAddress _address; 
     private int _port;
     private PerfectAuthChannel _pac;
+    private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
+
 
     public StubbornChannel(PerfectAuthChannel pac, InetAddress serverAddress, int serverPort){
         _address = serverAddress;
@@ -40,17 +43,17 @@ public class StubbornChannel
             }
 
             public void run(){
-                //while(true){
-                //    System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //    _udpChannel.sendMessage(_dest, _port, _msg);
-                //    try {
-                //        Thread.sleep(500);
-                //    } catch (InterruptedException e) {
-                //        e.printStackTrace();
-                //    }
-                //}
+                while(true){
+                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                    _udpChannel.sendMessage(_dest, _port, _msg);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                _udpChannel.sendMessage(_dest, _port, _msg);
+                //_udpChannel.sendMessage(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
@@ -64,6 +67,11 @@ public class StubbornChannel
 
     public void receivedMessage(Message msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
+        if (_receivedMessages.contains(msg)){
+            System.out.println("SC:: received message already");
+            return;
+        }
+        _receivedMessages.add(msg);
         _pac.receivedMessage(msg, port, address);
     }
 }

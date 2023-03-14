@@ -54,7 +54,6 @@ public class App
 
     public static void readFromFile(String file, Server server, String leaderFlag, String messageToSend) throws IOException{
         try {
-        
             File myObj = new File(file);
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {

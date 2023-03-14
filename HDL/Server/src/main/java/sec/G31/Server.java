@@ -14,6 +14,7 @@ public class Server
     private int _port;
     private int _F;
     private IBFT _ibft;
+    private Blockchain _blockchain;
     private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>(); // <server id, port>
 
     public Server(int serverId,InetAddress serverAddress, int serverPort,
@@ -62,8 +63,12 @@ public class Server
         return _leaderFlag.equals("Y");
     }
 
-    boolean isFaulty() {
+    public boolean isFaulty() {
         return _faultType.equals("F"); 
+    }
+
+    public void addToBlockchain(String msg){
+        _blockchain.addMessage(msg);
     }
 
     public void sendMessage(String destServer, int destPort, String msg){

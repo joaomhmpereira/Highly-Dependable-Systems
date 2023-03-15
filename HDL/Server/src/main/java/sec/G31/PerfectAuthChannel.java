@@ -107,14 +107,14 @@ public class PerfectAuthChannel {
             // verify that it has came from the correct port and with proper authentication
             if (!msg.getType().equals("START")){
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
-                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg); // inform the upper layer
                 } else {
-                    System.out.println("PAC:: message from " + msg.getSenderId() + " " + msg + " was not verified");
+                    //System.out.println("PAC:: message from " + msg.getSenderId() + " " + msg + " was not verified");
                 }
             } else { // if message comes from client we don't have to verify the port
                 if (verifyMessage(msg)) {
-                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg); // inform the upper layer
                 }
             }

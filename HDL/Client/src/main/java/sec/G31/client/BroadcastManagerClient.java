@@ -23,20 +23,15 @@ public class BroadcastManagerClient
         _broadcastServers = servers;
         _clientId = clientId;
     }
-
+    
     public void receivedMessage(DecidedMessage msg){
-        //System.out.println(msg.toString());
-        //String type = msg.getType();
-        System.out.println("received decided message: " + msg.toString());
+        System.out.println("[CLIENT " + _clientId + "] Value decided for instance " + msg.getInstance() + " -> " + msg.getValue());
     }
 
     /**
      * sends a message to every server
      */
     public void sendBroadcast(Message msg){
-        //System.out.println("sending broadcast message: " + msg.toString());
-        //System.out.println("to servers: " + _broadcastServers.toString());
-        //System.out.println("size: " + _broadcastServers.size());
         try {
             InetAddress destAddr = InetAddress.getByName("127.0.0.1");
             for(int i = 1; i <= _broadcastServers.size(); i++){ // send to all servers 

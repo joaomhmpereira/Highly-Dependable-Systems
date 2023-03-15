@@ -14,11 +14,11 @@ public class App
     /**
      * Constructor for the App class (mainly to use in the tests)
      */
-    public App(int serverId, String serverAddress, int serverPort, String faultType, String leaderFlag, int numF, String configFile, String messageToSend)
+    public App(int serverId, String serverAddress, int serverPort, String faultType, String leaderFlag, int numF, String configFile)
     {
         _server = initServer(serverId, serverAddress, serverPort, faultType, leaderFlag, numF);
         try {
-            App.readFromFile(configFile, _server, leaderFlag, messageToSend);
+            App.readFromFile(configFile, _server, leaderFlag);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,7 +44,7 @@ public class App
         LOGGER.info("Server created: " + server.toString());
         // reading from the configuration file
         try {
-            readFromFile(args[6], server, leaderFlag, "OLA");
+            readFromFile(args[6], server, leaderFlag);
             // while(true)
             //     readFromFile("System.in", server, leaderFlag);
         } catch (IOException e) {
@@ -52,7 +52,7 @@ public class App
         }
     }
 
-    public static void readFromFile(String file, Server server, String leaderFlag, String messageToSend) throws IOException{
+    public static void readFromFile(String file, Server server, String leaderFlag) throws IOException{
         try {
             File myObj = new File(file);
             Scanner myReader = new Scanner(myObj);

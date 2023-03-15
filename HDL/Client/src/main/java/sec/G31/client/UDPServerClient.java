@@ -84,11 +84,11 @@ public class UDPServerClient extends Thread{
                 try {
                     DecidedMessage message = (DecidedMessage) SerializationUtils.deserialize(clientData);
                     // calling a new thread that will process the message
-                    System.out.println("received decide message");
+                    //System.out.println("received decide message");
                     Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
                     t1.start();
                 } catch (ClassCastException e) {
-                    System.out.println("Received ACK, ignoring...");
+                    //System.out.println("Received ACK, ignoring...");
                     AckMessage ack = (AckMessage) SerializationUtils.deserialize(clientData);
                     _UDPchannel.receivedAck(ack, clientPort);
                 }

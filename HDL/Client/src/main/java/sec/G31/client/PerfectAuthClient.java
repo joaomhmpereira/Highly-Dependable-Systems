@@ -71,11 +71,11 @@ public class PerfectAuthClient {
      */
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
-        System.out.println("PAC:: received message");
+        //System.out.println("PAC:: received message");
         try {
             // verify that it has came from the correct port and with proper authentication
             if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
-                System.out.println("PAC:: message verified");
+                //System.out.println("PAC:: message verified");
                 _broadcastManager.receivedMessage(msg); // inform the upper layer
             }
 

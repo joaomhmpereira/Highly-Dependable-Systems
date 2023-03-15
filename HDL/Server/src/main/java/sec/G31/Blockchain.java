@@ -22,6 +22,18 @@ public class Blockchain {
     }
 
     public String getLastDecidedValue(){
-        return _blockChainList.get(_blockChainList.size());
+        if (_blockChainList.size() == 0){
+            return ":::EMPTY:::";
+        }
+        return _blockChainList.get(_blockChainList.size()-1);
+    }
+
+    @Override
+    public String toString(){
+        String result = "";
+        for(String s : _blockChainList){
+            result += s + ".";
+        }
+        return result;
     }
 }

@@ -5,11 +5,17 @@ import java.io.Serializable;
 public class DecidedMessage implements Serializable {
     private String _value;
     private int _senderId;
+    private int _instance;
     private String _cipheredDigest;
 
-    public DecidedMessage(String value, int senderId) {
+    public DecidedMessage(String value, int senderId, int instance) {
         _senderId = senderId;
         _value = value;
+        _instance = instance;
+    }
+
+    public int getInstance() {
+        return _instance;
     }
 
     public String getValue() {
@@ -29,7 +35,7 @@ public class DecidedMessage implements Serializable {
     }
 
     public String stringForDigest(){
-        return _value + "." + _senderId;
+        return _value + "." + _senderId + "." + _instance;
     }
 
     @Override
@@ -38,6 +44,6 @@ public class DecidedMessage implements Serializable {
             return false;
         }
         DecidedMessage other = (DecidedMessage) obj;
-        return other.getValue().equals(_value) && other.getSenderId() == _senderId;
+        return other.getValue().equals(_value) && other.getSenderId() == _senderId && other.getInstance() == _instance;
     }
 }

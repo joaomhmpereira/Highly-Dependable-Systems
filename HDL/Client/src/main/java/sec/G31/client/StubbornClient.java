@@ -79,9 +79,9 @@ public class StubbornClient
 
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
-        System.out.println("SC:: received message");
+        //System.out.println("SC:: received message");
         if (_receivedMessages.contains(msg)){
-            System.out.println("SC:: received message already");
+            //System.out.println("SC:: received message already");
             return;
         }
         _receivedMessages.add(msg);

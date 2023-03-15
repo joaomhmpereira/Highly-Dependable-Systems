@@ -35,15 +35,15 @@ public class BroadcastManager
         String type = msg.getType();
         switch(type){
             case "PRE-PREPARE":
-                System.out.println("received pre-prepare: " + msg.toString());
+                //System.out.println("received pre-prepare: " + msg.toString());
                 _ibft.receivePrePrepare(msg);
                 break;
             case "PREPARE":
-                System.out.println("received prepare: " + msg.toString());
+                //System.out.println("received prepare: " + msg.toString());
                 _ibft.receivePrepare(msg);
                 break;
             case "COMMIT":
-                System.out.println("received commit: " + msg.toString());
+                //System.out.println("received commit: " + msg.toString());
                 _ibft.receiveCommit(msg);
                 break;
             case "START":
@@ -58,9 +58,9 @@ public class BroadcastManager
                  * 
                  * ele aumenta a instance quando decide no IBFT
                 */
-                System.out.println("received start: " + msg.toString());
+                //System.out.println("received start: " + msg.toString());
                 int instance = _ibft.getConsensusInstance();
-                System.out.println("Starting IBFT");
+                //System.out.println("Starting IBFT");
                 _ibft.start(msg.getValue(), instance, msg.getSenderPort());
         }
     }

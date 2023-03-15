@@ -115,18 +115,16 @@ public class StubbornChannel
             }
 
             public void run(){
-                System.out.println("SC:: sending decided message");
+                //System.out.println("SC:: sending decided message");
                 while(_currentlySendingDecidedMessages.get(_port).contains(_msg)){
                     //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                     _UDPchannel.sendDecide(_dest, _port, _msg);
-                    System.out.println("sent");
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-                System.out.println("done");
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                 //_UDPchannel.sendDecide(_dest, _port, _msg);
             }
@@ -141,7 +139,7 @@ public class StubbornChannel
     public void receivedMessage(Message msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
         if (_receivedMessages.contains(msg)){
-            System.out.println("SC:: received message already");
+            //System.out.println("SC:: received message already");
             return;
         }
         _receivedMessages.add(msg);

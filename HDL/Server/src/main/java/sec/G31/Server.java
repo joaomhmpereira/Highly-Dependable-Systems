@@ -72,6 +72,14 @@ public class Server
         return _blockchain.getLastDecidedValue();
     }
 
+    public Blockchain getBlockchain(){
+        return _blockchain;
+    }
+
+    public String getBlockchainString(){
+        return _blockchain.toString();
+    }
+
     public int getConsensusInstance(){
         return _blockchain.getConsensusInstance();
     }

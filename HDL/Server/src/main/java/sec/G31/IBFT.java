@@ -88,8 +88,8 @@ public class IBFT
      * for now there is only 1 instance and only 1 round so there is no problem
      */
     public void start(String value, int instance, int clientPort){
-        LOGGER.info("IBFT:: started");
-
+        //LOGGER.info("IBFT:: started");
+        //System.out.println("IBFT:: started instance: " + instance + " value: " + value);
         _inputValue = value;
         _instance = instance;
         _clientPort = clientPort;
@@ -130,18 +130,19 @@ public class IBFT
     public void receivedCommitQuorum(Message msg){
         // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
-        LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
+        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
         //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
         if (_server.getId() == _leader){
-            System.out.println("SENDING DECIDE TO CLIENT");
-            DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId());
+            //System.out.println("SENDING DECIDE TO CLIENT");
+            DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId(), _instance);
             _broadcast.sendDecide(decideMessage, _clientPort);
         }
-        synchronized(this){
-            _server.addToBlockchain(msg.getValue());
-            _instance += 1;
-            cleanup();    
-        }
+        _server.addToBlockchain(msg.getValue());
+        _instance += 1;
+
+        //System.out.println("IBFT:: Blockchain: " + _server.getBlockchain());
+        //LOGGER.info("[SERVER " + _server.getId() + "] CLEANING UP");;
+        this.cleanup();    
     }
 
 
@@ -191,7 +192,7 @@ public class IBFT
                 }
             }
 
-            System.out.println("Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
+            //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
             
             // only send one commit if we have already quorum
             if(_prepareQuorum.get(value).size() >= 2*_F+1 && !_sentCommit && !_decided){ // in case of quorum
@@ -231,18 +232,18 @@ public class IBFT
                 }
             }
             
-            
-            System.out.println("Commit quorum size: " + _commitQuorum.get(value).size());
+            //System.out.println("[SERVER " + _server.getId() + "] Commit quorum size for value: " + value  + " -> " + _commitQuorum.get(value).size());
 
             // decide the value only one time
             if(_commitQuorum.get(value).size() >= 2*_F+1 && !_decided){
                 _decided = true;
+                //System.out.println("[SERVER " + _server.getId() + "] <<< received " + _commitQuorum.get(value).size() + " commits for the value >>> " + value);
                 this.receivedCommitQuorum(msg); // we received a quorum
             }
         }
     }
 
     public int getConsensusInstance(){
-        return _server.getConsensusInstance();
+        return _instance;
     }
 }

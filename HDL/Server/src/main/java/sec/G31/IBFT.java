@@ -3,6 +3,8 @@ package sec.G31;
 import java.util.logging.Logger;
 import java.util.Hashtable;
 import java.util.List;
+
+import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
 import java.util.ArrayList;
 
@@ -28,10 +30,11 @@ public class IBFT
     private int _preparedRound;
     private String _preparedValue;
     private String _inputValue;
-    private boolean _sentPrepare;
+    private int _clientPort;
+    //private boolean _sentPrepare;
     private boolean _sentCommit; 
     private boolean _decided;
-    private int _numCommitsReceived; // 
+    //private int _numCommitsReceived; // 
     private int _F; // faulty nodes
     private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
     private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of guys that sent us prepare> 
@@ -39,14 +42,13 @@ public class IBFT
     private final String PREPARE_MSG = "PREPARE";
     private final String PRE_PREPARE_MSG = "PRE-PREPARE";
     private final String COMMIT_MSG = "COMMIT";
-
-
-    private String _decidedValue;
     
-
-    // manager.newPrePrepareBroadcast(msg)
-
-    // private Timer _timer;
+    /**
+        we only responde to messages of the same instance, we discard every message 
+        that is from an instance from the future. Nao ha problema porque gracas ao 
+        stubborn channel esssa mensagem eventualmente volta a vir para nos
+     */
+    
 
     /**
      * The constructor
@@ -54,7 +56,7 @@ public class IBFT
      */
     public IBFT(Server server, int faultyNodes){
         _server = server;
-        _instance = 0;
+        _instance = 1;
         _currentRound = 0;
         _preparedRound = 0;
         _preparedValue = "";
@@ -62,27 +64,38 @@ public class IBFT
         _commitQuorum = new Hashtable<String, ArrayList<Integer>>();
         _broadcast = new BroadcastManager(this, server, server.getBroadcastNeighbours());
         _F = faultyNodes; 
-        _sentPrepare = false;
+        //_sentPrepare = false;
         _decided = false;
         _sentCommit = false;
-        _leader = 1; // just for this implementation 
+        _leader = 1; // just for this implementation
+    }
+
+    
+    public void cleanup(){
+        _currentRound = 0;
+        _preparedRound = 0;
+        _preparedValue = "";
+        _inputValue = "";
+        _prepareQuorum.clear();
+        _commitQuorum.clear();
+        _receivedMessages.clear();
+        _sentCommit = false;
+        _decided = false;
     }
 
     /**
      * the server wants to send a new value 
      * for now there is only 1 instance and only 1 round so there is no problem
      */
-    public void start(String value, int instance){
-        LOGGER.info("IBFT:: started");
-
+    public void start(String value, int instance, int clientPort){
+        //LOGGER.info("IBFT:: started");
+        //System.out.println("IBFT:: started instance: " + instance + " value: " + value);
         _inputValue = value;
         _instance = instance;
-        //_currentRound = 1;
-        //_preparedRound = null;
-        //_preparedValue = null;
+        _clientPort = clientPort;
 
         if(_server.getId() == _leader){ // if it's the leader
-            Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId());
+            Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId(), _server.getPort());
             _broadcast.sendBroadcast(prePrepareMessage);
         }
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
@@ -93,10 +106,10 @@ public class IBFT
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()){
-            prepareMessage = new Message(PREPARE_MSG, instance, round, "VALUE DIFERENTE", _server.getId());
+            prepareMessage = new Message(PREPARE_MSG, instance, round, "DIFFERENT VALUE", 1, _server.getPort());
             
         } else {
-            prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId());
+            prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId(), _server.getPort());
         }
         _broadcast.sendBroadcast(prepareMessage);
     }
@@ -107,7 +120,7 @@ public class IBFT
         _preparedValue = value;
 
 
-        Message commitMessage = new Message(COMMIT_MSG, _instance, _preparedRound, _preparedValue, _server.getId());
+        Message commitMessage = new Message(COMMIT_MSG, _instance, _preparedRound, _preparedValue, _server.getId(), _server.getPort());
         _broadcast.sendBroadcast(commitMessage);  // broadcast
     }
 
@@ -117,9 +130,19 @@ public class IBFT
     public void receivedCommitQuorum(Message msg){
         // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
-        LOGGER.info("===== DECIDIMOS ===== ---> " + msg.getValue());
+        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
         //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
-        _decidedValue = msg.getValue();
+        if (_server.getId() == _leader){
+            //System.out.println("SENDING DECIDE TO CLIENT");
+            DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId(), _instance);
+            _broadcast.sendDecide(decideMessage, _clientPort);
+        }
+        _server.addToBlockchain(msg.getValue());
+        _instance += 1;
+
+        //System.out.println("IBFT:: Blockchain: " + _server.getBlockchain());
+        //LOGGER.info("[SERVER " + _server.getId() + "] CLEANING UP");;
+        this.cleanup();    
     }
 
 
@@ -133,7 +156,7 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound && 
                 msg.getSenderId() == _leader && !_receivedMessages.contains(msg)){
             // set timer to running
-            _sentPrepare = true;
+            //_sentPrepare = true;
             _receivedMessages.add(msg);
             this.sendPrepares(_instance, _currentRound, msg.getValue());
         }
@@ -144,11 +167,13 @@ public class IBFT
      */
     public void receivePrepare(Message msg){
         // verificar a autenticacao no perfect channel
-        
+        if(_decided){
+            return;
+        }
         // if it's the same round and instance as ours
         // and has not received the message yet
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound
-                && !_receivedMessages.contains(msg)){
+                && !_receivedMessages.contains(msg) && !_decided){
             _receivedMessages.add(msg);
             String value = msg.getValue();
             //update the quorum or insert new entry if it isn't there
@@ -167,10 +192,10 @@ public class IBFT
                 }
             }
 
-            System.out.println("Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
+            //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
             
             // only send one commit if we have already quorum
-            if(_prepareQuorum.get(value).size() >= 2*_F+1 && _sentCommit == false){ // in case of quorum
+            if(_prepareQuorum.get(value).size() >= 2*_F+1 && !_sentCommit && !_decided){ // in case of quorum
                 _sentCommit = true;
                 this.receivedPrepareQuorum(_currentRound, value);
             }
@@ -182,11 +207,13 @@ public class IBFT
      */
     public void receiveCommit(Message msg){
         // verificar a autenticacao no perfect channel 
-
+        if(_decided){
+            return;
+        }
         // if it's the same round and instance as ours
         // and has not received the message yet
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound
-                && !_receivedMessages.contains(msg)){
+                && !_receivedMessages.contains(msg) && !_decided){
             _receivedMessages.add(msg);
             String value = msg.getValue();
             
@@ -205,18 +232,18 @@ public class IBFT
                 }
             }
             
-            
-            System.out.println("Commit quorum size: " + _commitQuorum.get(value).size());
+            //System.out.println("[SERVER " + _server.getId() + "] Commit quorum size for value: " + value  + " -> " + _commitQuorum.get(value).size());
 
             // decide the value only one time
-            if(_commitQuorum.get(value).size() >= 2*_F+1 && _decided == false){
+            if(_commitQuorum.get(value).size() >= 2*_F+1 && !_decided){
                 _decided = true;
+                //System.out.println("[SERVER " + _server.getId() + "] <<< received " + _commitQuorum.get(value).size() + " commits for the value >>> " + value);
                 this.receivedCommitQuorum(msg); // we received a quorum
             }
         }
     }
 
-    public String getDecidedValue(){
-        return _decidedValue;
+    public int getConsensusInstance(){
+        return _instance;
     }
 }

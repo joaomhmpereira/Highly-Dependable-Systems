@@ -1,21 +1,18 @@
 package sec.G31;
-import java.util.logging.Logger;
 
-import sec.G31.messages.Message;
+import sec.G31.messages.*;
 import java.io.*;
 import java.net.*;
 
 public class UDPchannel 
 {
-    private final static Logger LOGGER = Logger.getLogger(UDPchannel.class.getName());
-    private StubbornChannel _channel;
-    private UDPclient _client;
+    private StubbornChannel _stubChannel;
     private UDPserver _server;
     private DatagramSocket _socket;
 
     public UDPchannel(StubbornChannel channel, InetAddress address, int serverPort){
         try{
-            _channel = channel;
+            _stubChannel = channel;
             _socket = new DatagramSocket(serverPort);
             _server = new UDPserver(this, serverPort, _socket);
             _server.start();
@@ -28,16 +25,49 @@ public class UDPchannel
     public void sendMessage(InetAddress destAddress, int destPort, Message msg){
         try{
             //LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
-            _client = new UDPclient(destAddress, destPort, _socket, msg);
+            new UDPclient(destAddress, destPort, _socket, msg);
         }catch(IOException e){
             System.out.println("Error while sending message");
             e.printStackTrace();
         }
     }
 
+    public void sendDecide(InetAddress destAddress, int destPort, DecidedMessage msg){
+        try{
+            //LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
+            new UDPclient(destAddress, destPort, _socket, msg);
+        }catch(IOException e){
+            System.out.println("Error while sending message");
+            e.printStackTrace();
+        }
+    }
+
+    public void sendAck(InetAddress destAddress, int destPort, AckMessage msg){
+        try{
+            //LOGGER.info("UDPchannel:: " + destAddress + " " + destPort + " ::: " + msg.toString());
+            new UDPclient(destAddress, destPort, _socket, msg);
+        }catch(IOException e){
+            System.out.println("Error while sending message");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * decided wheter to send a Ack Decided or a Ack message
+     */
+    public void receivedAck(AckMessage msg, int port){
+        if(msg.isDecidedMessage())
+            _stubChannel.receivedAckDecided(msg, port);
+        else
+            _stubChannel.receivedAck(msg, port);
+    }
+
     public void receivedMessage(Message msg, int port, InetAddress address){
         //LOGGER.info("UDP:: received message");
-        _channel.receivedMessage(msg, port, address);
+        AckMessage ack = new AckMessage(msg, port);
+        this.sendAck(address, port, ack);
+        _stubChannel.receivedMessage(msg, port, address);
+
     }
 
 }

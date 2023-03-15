@@ -10,29 +10,27 @@ public class Server
     private InetAddress _address;
     private String _faultType;
     private String _leaderFlag;
-    private int _instance;      // the instance number of the blockchain
     private int _port;
-    private int _F;
     private IBFT _ibft;
+    private Blockchain _blockchain;
     private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>(); // <server id, port>
 
     public Server(int serverId,InetAddress serverAddress, int serverPort,
                  String faultType, String leaderFlag, int numFaulty){
         _id = serverId;
-        _instance = 1;      // it starts with instance 0 for now 
         _address = serverAddress;
         _port = serverPort;
-        _F = numFaulty;
         //_channel = new PerfectAuthChannel(this, _address, _port);
-        _ibft = new IBFT(this, numFaulty); // TO-DO: send the number of faulty nodes
+        _ibft = new IBFT(this, numFaulty);
         _faultType = faultType;
         _leaderFlag = leaderFlag;
+        _blockchain = new Blockchain();
         System.out.println("===Server " + _id + " created===");
     }
 
-    public void startIBFT(String value){
-        _ibft.start(value, _instance);
-    }
+    //public void startIBFT(String value){
+    //    _ibft.start(value, _instance);
+    //}
 
     public IBFT getIBFT(){
         return _ibft;
@@ -62,18 +60,28 @@ public class Server
         return _leaderFlag.equals("Y");
     }
 
-    boolean isFaulty() {
+    public boolean isFaulty() {
         return _faultType.equals("F"); 
     }
 
-    public void sendMessage(String destServer, int destPort, String msg){
-        LOGGER.info("SERVER:: " + destServer + " " + destPort + " " + msg);
-        try {
-            InetAddress serverAddress = InetAddress.getByName(destServer);
-            //_channel.sendMessage(serverAddress, destPort, msg);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+    public void addToBlockchain(String msg){
+        _blockchain.addMessage(msg);
+    }
+
+    public String getLastDecidedValue(){
+        return _blockchain.getLastDecidedValue();
+    }
+
+    public Blockchain getBlockchain(){
+        return _blockchain;
+    }
+
+    public String getBlockchainString(){
+        return _blockchain.toString();
+    }
+
+    public int getConsensusInstance(){
+        return _blockchain.getConsensusInstance();
     }
 
     public void receivedMessage(String txt, int port, InetAddress address){

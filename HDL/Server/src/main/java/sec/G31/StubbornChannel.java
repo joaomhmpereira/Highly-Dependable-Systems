@@ -1,27 +1,39 @@
 package sec.G31;
 import java.util.*;
-import java.util.logging.Logger;
+// import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
 
-import sec.G31.messages.DecidedMessage;
-import sec.G31.messages.Message;
+import sec.G31.messages.*;
 
 import java.net.*;
 
 public class StubbornChannel
 {
-    private final static Logger LOGGER = Logger.getLogger(StubbornChannel.class.getName());
-    private UDPchannel _udpChannel;
+    // private final static Logger LOGGER = Logger.getLogger(StubbornChannel.class.getName());
+    private UDPchannel _UDPchannel;
     private InetAddress _address; 
     private int _port;
-    private PerfectAuthChannel _pac;
-    private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
+    private PerfectAuthChannel _PACchannel;
+    private List<Message> _receivedMessages;
+    // <port, list<messages>> if a message is still in this list, the port hasn't acked the message 
+    private ConcurrentHashMap<Integer, ArrayList<Message>> _currentlySendingMessages;
+                            // = new Hashtable<Integer, ArrayList<Message>>();
+    
+    // list of decided messages that we are currently sending for each port 
+    private ConcurrentHashMap<Integer, ArrayList<DecidedMessage>> _currentlySendingDecidedMessages;
+                                    // = new Hashtable<Integer, ArrayList<DecidedMessage>>()
 
-
+    /**
+     * this will be part of a perfect auth channel
+     */
     public StubbornChannel(PerfectAuthChannel pac, InetAddress serverAddress, int serverPort){
         _address = serverAddress;
         _port = serverPort;
-        _udpChannel = new UDPchannel(this, _address, _port);
-        _pac = pac;
+        _UDPchannel = new UDPchannel(this, _address, _port);
+        _PACchannel = pac;
+        _receivedMessages = new ArrayList<Message>();
+        _currentlySendingDecidedMessages = new ConcurrentHashMap<Integer, ArrayList<DecidedMessage>>();
+        _currentlySendingMessages = new ConcurrentHashMap<Integer, ArrayList<Message>>();
     }
 
    
@@ -37,31 +49,43 @@ public class StubbornChannel
             InetAddress _dest;
             int _port;
             Message _msg;
+            
+            /**
+             * this is vulnerable to a DOS attack, too much memory :(
+             */
             public StubbornSender(InetAddress destAddress, int destPort, Message msg){
                 _dest = destAddress;
                 _port = destPort;
                 _msg = msg;
+                if(_currentlySendingMessages.containsKey(destPort)){
+                    _currentlySendingMessages.get(destPort).add(msg);
+                }else{
+                    ArrayList<Message> newList = new ArrayList<Message>();
+                    newList.add(msg);
+                    _currentlySendingMessages.put(destPort, newList);
+                }
             }
 
             public void run(){
-                //while(true){
-                //    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //    _udpChannel.sendMessage(_dest, _port, _msg);
-                //    try {
-                //        Thread.sleep(100);
-                //    } catch (InterruptedException e) {
-                //        e.printStackTrace();
-                //    }
-                //}
+                // if this messages is still in the list of acked messages for that port 
+                while(_currentlySendingMessages.get(_port).contains(_msg)){
+                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                    _UDPchannel.sendMessage(_dest, _port, _msg);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                _udpChannel.sendMessage(_dest, _port, _msg);
+                //_UDPchannel.sendMessage(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
         t1.start();
 
         //System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
-        //_udpChannel.sendMessage(destAddress, destPort, msg);
+        //_UDPchannel.sendMessage(destAddress, destPort, msg);
     }
 
     /**
@@ -80,30 +104,40 @@ public class StubbornChannel
                 _dest = destAddress;
                 _port = destPort;
                 _msg = msg;
+                if(_currentlySendingDecidedMessages.containsKey(destPort)){
+                    _currentlySendingDecidedMessages.get(destPort).add(msg);
+                }else{
+                    ArrayList<DecidedMessage> newList = new ArrayList<DecidedMessage>();
+                    newList.add(msg);
+                    _currentlySendingDecidedMessages.put(destPort, newList);
+                }
+                //_currentlySendingDecidedMessages.put(destPort, _msg);
             }
 
             public void run(){
-                //while(true){
-                //    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //    _udpChannel.sendMessage(_dest, _port, _msg);
-                //    try {
-                //        Thread.sleep(100);
-                //    } catch (InterruptedException e) {
-                //        e.printStackTrace();
-                //    }
-                //}
+                System.out.println("SC:: sending decided message");
+                while(_currentlySendingDecidedMessages.get(_port).contains(_msg)){
+                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                    _UDPchannel.sendDecide(_dest, _port, _msg);
+                    System.out.println("sent");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println("done");
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                _udpChannel.sendDecide(_dest, _port, _msg);
+                //_UDPchannel.sendDecide(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
         t1.start();
 
         //System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
-        //_udpChannel.sendMessage(destAddress, destPort, msg);
+        //_UDPchannel.sendMessage(destAddress, destPort, msg);
     }
 
-    // TODO - no caso em que o mesmo cliente manda duas strings iguais para instancias diferentes vamos rejeitar
     public void receivedMessage(Message msg, int port, InetAddress address){
         //LOGGER.info("SC:: received message");
         if (_receivedMessages.contains(msg)){
@@ -111,6 +145,34 @@ public class StubbornChannel
             return;
         }
         _receivedMessages.add(msg);
-        _pac.receivedMessage(msg, port, address);
+        _PACchannel.receivedMessage(msg, port, address);
+    }
+
+    /**
+     * when we received a Ack Message for a normal message
+     */
+    public void receivedAck(AckMessage msg, int port){
+        Message am = msg.getAckedMessage();
+        ArrayList<Message> portMessages = _currentlySendingMessages.get(port);
+        for (int i = 0; i < portMessages.size(); i++){
+            if (am.equals(portMessages.get(i))){
+                _currentlySendingMessages.get(port).remove(i);
+                break;
+            }
+        }
+    }
+
+    /**
+     * when we receive a ack message for a decide message
+     */
+    public void receivedAckDecided(AckMessage msg, int port){
+        DecidedMessage dm = msg.getAckedDecidedMessage();
+        ArrayList<DecidedMessage> portMessages = _currentlySendingDecidedMessages.get(port);
+        for (int i = 0; i < portMessages.size(); i++){
+            if (dm.equals(portMessages.get(i))){
+                _currentlySendingDecidedMessages.get(port).remove(i);
+                break;
+            }
+        }
     }
 }

@@ -10,7 +10,6 @@ public class Server
     private InetAddress _address;
     private String _faultType;
     private String _leaderFlag;
-    private int _instance;      // the instance number of the blockchain
     private int _port;
     private IBFT _ibft;
     private Blockchain _blockchain;
@@ -19,7 +18,6 @@ public class Server
     public Server(int serverId,InetAddress serverAddress, int serverPort,
                  String faultType, String leaderFlag, int numFaulty){
         _id = serverId;
-        _instance = 1;      // it starts with instance 0 for now 
         _address = serverAddress;
         _port = serverPort;
         //_channel = new PerfectAuthChannel(this, _address, _port);
@@ -68,6 +66,10 @@ public class Server
 
     public void addToBlockchain(String msg){
         _blockchain.addMessage(msg);
+    }
+
+    public String getLastDecidedValue(){
+        return _blockchain.getLastDecidedValue();
     }
 
     public int getConsensusInstance(){

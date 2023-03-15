@@ -1,7 +1,7 @@
 package sec.G31;
 //import java.util.logging.Logger;
 
-import sec.G31.messages.Message;
+import sec.G31.messages.*;
 import org.apache.commons.lang3.*;
 import java.io.*;
 import java.net.*;
@@ -26,46 +26,59 @@ public class UDPserver extends Thread{
 	/** Buffer size for receiving a UDP packet. */
 	private static final int BUFFER_SIZE = MAX_UDP_DATA_SIZE;
 
-    /** port number of the server */
-    private final int _port; 
-
     /** datagram socket for this server */
     private DatagramSocket _socket;
 
-    private UDPchannel _channel;
+    private UDPchannel _UDPchannel;
 
     /**
      * Creates the UDP server, links it to the udp channel that created it.
      * 
      */
 	public UDPserver(UDPchannel channel, int portNumber, DatagramSocket socket) throws IOException{
-		_port = portNumber;
-        _channel = channel;
+        _UDPchannel = channel;
         _socket = socket;
 		//System.out.printf("Server will be connected to port %d %n", _port);
 	}
 
     /**
-     * It will run in a new separate thread
-     * class that will process the message received
-    */
+     * Processes a received message
+     */
     class ProcessMessage implements Runnable{
-            InetAddress _address;
-            int _port;
-            Message _msg;
-
-            public ProcessMessage(InetAddress clientAddress, int clientPort, Message msg){
-                _address = clientAddress;
-                _port = clientPort;
-                _msg = msg;
-            }
-
-            /** it will run in a separate thread */
-            public void run(){
-                //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg.toString());
-                _channel.receivedMessage(_msg, _port, _address);
-            }
+        InetAddress _address;
+        int _port;
+        Message _msg;
+        
+        public ProcessMessage(InetAddress clientAddress, int clientPort, Message msg){
+            _address = clientAddress;
+            _port = clientPort;
+            _msg = msg;
         }
+        
+        /** it will run in a separate thread */
+        public void run(){
+            //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg.toString());
+            _UDPchannel.receivedMessage(_msg, _port, _address);
+        }
+    }
+
+    /**
+     * Processes a received Ack message
+     */
+    class ProcessAck implements Runnable{
+        AckMessage _msg;
+        int _port;
+        
+        public ProcessAck(int clientPort, AckMessage msg){
+            _port = clientPort;
+            _msg = msg;
+        }
+        
+        /** it will run in a separate thread */
+        public void run(){
+            _UDPchannel.receivedAck(_msg, _port);
+        }
+    }
 
     /**
      * Runs in a new thread.
@@ -85,11 +98,18 @@ public class UDPserver extends Thread{
                 InetAddress clientAddress = clientPacket.getAddress();
                 int clientPort = clientPacket.getPort();
                 byte[] clientData = clientPacket.getData();
-                
-                Message message = (Message) SerializationUtils.deserialize(clientData);
+        
+                try { // if we receive a normal message
+                    Message message = (Message) SerializationUtils.deserialize(clientData);
+                    Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
+                    t1.start();
 
-                Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
-                t1.start();
+                } catch (ClassCastException e) { // if we receive a ack to a message
+                    AckMessage ackMessage = (AckMessage) SerializationUtils.deserialize(clientData);
+                    Thread t1 = new Thread(new ProcessAck(clientPort, ackMessage));
+                    t1.start();
+                }
+                
             }
 
             // Close socket (this will also close the socket used by the client)

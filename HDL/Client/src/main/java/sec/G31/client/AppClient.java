@@ -2,7 +2,6 @@ package sec.G31.client;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import sec.G31.messages.Message;
 
@@ -12,20 +11,24 @@ import sec.G31.messages.Message;
  */
 public class AppClient 
 {
+    private int _nonceCounter;
+    private int _clientId;
+    private int _port;
+    BroadcastManagerClient _broadcastManager;
 
-    //private BroadcastManagerClient _broadcastManager;
-    //private int _clientId;
-//
-    //public AppClient(int clientId, String configFile) {
-    //    _clientId = clientId;
-    //    try {
-    //        Hashtable<Integer, Integer> servers = readFromFile(configFile);
-    //        _broadcastManager = new BroadcastManagerClient(servers);
-    //        
-    //    } catch (IOException e) {
-    //        e.printStackTrace();
-    //    }
-    //}
+    public AppClient(int clientId, String configFile, String address, int port) {
+        _nonceCounter = 0;
+        _clientId = clientId;
+        _port = port;
+        try {
+            Hashtable<Integer, Integer> servers = readFromFile(configFile);
+            InetAddress addr = InetAddress.getByName(address);
+            _broadcastManager = new BroadcastManagerClient(addr, port, servers, clientId);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static Hashtable<Integer, Integer> readFromFile(String file) throws IOException{
         try {
@@ -56,6 +59,7 @@ public class AppClient
             System.exit(1);
         }
         
+        int _nonceCounter = 0;
         int _clientId = Integer.parseInt(args[0]);
         final String _address = args[1];
         final int _port = Integer.parseInt(args[2]);
@@ -73,8 +77,8 @@ public class AppClient
             }
 
             InetAddress addr = InetAddress.getByName(_address);
-
             BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId);
+            
             Scanner inputScanner = new Scanner(System.in);
             System.out.println("Enter a new message (type \"QUIT\" to end server):");
             String newMessage = "";
@@ -85,17 +89,23 @@ public class AppClient
                     System.out.println("=== Goodbye Client " + _clientId + " ===");
                     break;
                 }
-            
-            //InitInstance msg = new InitInstance(_clientId, newMessage);
-            Message msg = new Message("START", -1, -1, newMessage, _clientId, _port);
-            // broadcast value to all servers
-            _broadcastManager.sendBroadcast(msg);
-        }
-        
-        inputScanner.close();
-
+                //InitInstance msg = new InitInstance(_clientId, newMessage);
+                Message msg = new Message("START", newMessage, _clientId, _port, _nonceCounter);
+                // broadcast value to all servers
+                _broadcastManager.sendBroadcast(msg);
+                // to diferentiate the next message even if the content is equal
+                _nonceCounter++;
+            }
+            inputScanner.close();
+            System.exit(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    public void submitValue(String value){
+        Message msg = new Message("START", value, _clientId, _port, _nonceCounter);
+        _broadcastManager.sendBroadcast(msg);
+        _nonceCounter++;
     }
 }

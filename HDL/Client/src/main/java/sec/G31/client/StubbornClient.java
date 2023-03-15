@@ -1,7 +1,9 @@
 package sec.G31.client;
 import java.util.*;
 //import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
 
+import sec.G31.messages.AckMessage;
 import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
 
@@ -15,6 +17,7 @@ public class StubbornClient
     private int _port;
     private PerfectAuthClient _pac;
     private List<DecidedMessage> _receivedMessages = new ArrayList<>(); // stores the received messages
+    private ConcurrentHashMap<Integer, ArrayList<Message>> _currentlySendingMessages;
 
 
     public StubbornClient(PerfectAuthClient pac, InetAddress serverAddress, int serverPort){
@@ -22,6 +25,7 @@ public class StubbornClient
         _port = serverPort;
         _udpChannel = new UDPChannelClient(this, _address, _port);
         _pac = pac;
+        _currentlySendingMessages = new ConcurrentHashMap<Integer, ArrayList<Message>>();
     }
 
    
@@ -41,20 +45,27 @@ public class StubbornClient
                 _dest = destAddress;
                 _port = destPort;
                 _msg = msg;
+                if(_currentlySendingMessages.containsKey(destPort)){
+                    _currentlySendingMessages.get(destPort).add(msg);
+                }else{
+                    ArrayList<Message> newList = new ArrayList<Message>();
+                    newList.add(msg);
+                    _currentlySendingMessages.put(destPort, newList);
+                }
             }
 
             public void run(){
-                //while(true){
-                //    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //    _udpChannel.sendMessage(_dest, _port, _msg);
-                //    try {
-                //        Thread.sleep(100);
-                //    } catch (InterruptedException e) {
-                //        e.printStackTrace();
-                //    }
-                //}
-                //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                _udpChannel.sendMessage(_dest, _port, _msg);
+                while(_currentlySendingMessages.get(_port).contains(_msg)){
+                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                    _udpChannel.sendMessage(_dest, _port, _msg);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                ////System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
+                //_udpChannel.sendMessage(_dest, _port, _msg);
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
@@ -75,5 +86,19 @@ public class StubbornClient
         }
         _receivedMessages.add(msg);
         _pac.receivedMessage(msg, port, address);
+    }
+
+    /**
+     * when we received a Ack Message for a normal message
+     */
+    public void receivedAck(AckMessage msg, int port){
+        Message am = msg.getAckedMessage();
+        ArrayList<Message> portMessages = _currentlySendingMessages.get(port);
+        for (int i = 0; i < portMessages.size(); i++){
+            if (am.equals(portMessages.get(i))){
+                _currentlySendingMessages.get(port).remove(i);
+                break;
+            }
+        }
     }
 }

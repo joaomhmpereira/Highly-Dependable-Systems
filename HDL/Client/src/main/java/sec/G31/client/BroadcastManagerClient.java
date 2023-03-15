@@ -15,11 +15,11 @@ public class BroadcastManagerClient
 {
     // attributes that are known to everyother guy 
     private Hashtable<Integer, Integer> _broadcastServers;
-    private PerfectAuthClient _channel;
+    private PerfectAuthClient _PAChannel;
     private int _clientId;
 
     public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId){
-        _channel = new PerfectAuthClient(this, address, port, servers);
+        _PAChannel = new PerfectAuthClient(this, address, port, servers);
         _broadcastServers = servers;
         _clientId = clientId;
     }
@@ -41,7 +41,7 @@ public class BroadcastManagerClient
             InetAddress destAddr = InetAddress.getByName("127.0.0.1");
             for(int i = 1; i <= _broadcastServers.size(); i++){ // send to all servers 
                 //System.out.println("sending to server on port: " + _broadcastServers.get(i));
-                _channel.sendMessage(destAddr, _broadcastServers.get(i), msg);
+                _PAChannel.sendMessage(destAddr, _broadcastServers.get(i), msg);
             }
         } catch (UnknownHostException e) {
             e.printStackTrace();

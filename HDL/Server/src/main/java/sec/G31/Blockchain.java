@@ -20,4 +20,8 @@ public class Blockchain {
     public int getConsensusInstance(){
         return _blockChainList.size();
     }
+
+    public String getLastDecidedValue(){
+        return _blockChainList.get(_blockChainList.size());
+    }
 }

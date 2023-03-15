@@ -5,6 +5,7 @@ import java.net.*;
 
 import org.apache.commons.lang3.SerializationUtils;
 
+import sec.G31.messages.AckMessage;
 import sec.G31.messages.Message;
 
 public class UDPClientClient
@@ -14,14 +15,20 @@ public class UDPClientClient
 
 		// Text is sent to server as bytes
 		byte[] clientBuffer = SerializationUtils.serialize(msg);
-		//System.out.printf("%d bytes to send%n", clientBuffer.length);
 
 		DatagramPacket clientPacket = new DatagramPacket(clientBuffer, clientBuffer.length, serverAddress, port);
-		//System.out.printf("Send to: %s:%d %n", serverAddress.toString(), port);
 		socket.send(clientPacket);
-		//System.out.println("Sent packet: " + clientPacket.toString());
 
-		//System.out.println("Socket closed");
+	}
+
+	public UDPClientClient(InetAddress serverAddress, int port, DatagramSocket socket, AckMessage msg) throws IOException {
+
+		// Text is sent to server as bytes
+		byte[] clientBuffer = SerializationUtils.serialize(msg);
+
+		DatagramPacket clientPacket = new DatagramPacket(clientBuffer, clientBuffer.length, serverAddress, port);
+		socket.send(clientPacket);
+
 	}
 
 }

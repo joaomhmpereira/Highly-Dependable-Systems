@@ -58,6 +58,10 @@ public class Message implements Serializable {
         return _senderPort;
     }
 
+    public void setInstance(int instance) {
+        _instance = instance;
+    }
+
     public String getCipheredDigest() {
         return _cipheredDigest;
     }

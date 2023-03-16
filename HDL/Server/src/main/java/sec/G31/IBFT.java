@@ -142,7 +142,10 @@ public class IBFT
 
         //System.out.println("IBFT:: Blockchain: " + _server.getBlockchain());
         //LOGGER.info("[SERVER " + _server.getId() + "] CLEANING UP");;
-        this.cleanup();    
+        this.cleanup();
+        synchronized(_broadcast){
+            _broadcast.notify();
+        }
     }
 
 

@@ -1,6 +1,9 @@
 package sec.G31;
 import java.net.*;
 import java.util.Hashtable;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 import sec.G31.messages.*;
 
 // nao sei se vai ter que ser uma thread actually 
@@ -17,11 +20,15 @@ public class BroadcastManager
     private PerfectAuthChannel _PAChannel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private IBFT _ibft;
+    private BlockingQueue<Message> _receivedMessagesQueue;
+    private int _consensusInstance;
 
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
         _broadcastNeighbors = neighbours;
         _PAChannel = new PerfectAuthChannel(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
+        _receivedMessagesQueue = new ArrayBlockingQueue<Message>(10);
+        _consensusInstance = 1;
     } 
 
     /**
@@ -59,9 +66,31 @@ public class BroadcastManager
                  * ele aumenta a instance quando decide no IBFT
                 */
                 //System.out.println("received start: " + msg.toString());
-                int instance = _ibft.getConsensusInstance();
+
+                synchronized(this){
+                    msg.setInstance(_consensusInstance);
+                    _receivedMessagesQueue.add(msg);
+                    _consensusInstance++;
+                    while(_ibft.getConsensusInstance() < msg.getInstance()){
+                        try {
+                            System.out.println("Not my turn (I'm instance " +  msg.getInstance() + "), waiting for instance " + _ibft.getConsensusInstance() + " to finish");
+                            wait();
+                            
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    try {
+                        Message m = _receivedMessagesQueue.take();
+                        System.out.println("Starting IBFT for instance " + m.getInstance());
+                        _ibft.start(m.getValue(), m.getInstance(), m.getSenderPort());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //int instance = _ibft.getConsensusInstance();
                 //System.out.println("Starting IBFT");
-                _ibft.start(msg.getValue(), instance, msg.getSenderPort());
+                //_ibft.start(msg.getValue(), instance, msg.getSenderPort());
         }
     }
 

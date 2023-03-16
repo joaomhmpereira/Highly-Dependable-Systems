@@ -118,19 +118,11 @@ public class AppClientTest
         AppClient client = new AppClient(1, "../configs/config3_4.txt", "127.0.0.1", 9558);
 
         client.submitValue(valueToDecide1);
-
-        // Wait for the value1 to be decided
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         client.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(600);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -159,19 +151,11 @@ public class AppClientTest
         AppClient client = new AppClient(1, "../configs/config4_4.txt", "127.0.0.1", 9559);
 
         client.submitValue(valueToDecide1);
-
-        // Wait for the value1 to be decided
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         client.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(600);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -202,19 +186,11 @@ public class AppClientTest
 
 
         client1.submitValue(valueToDecide1);
-
-        // Wait for the value1 to be decided
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         client2.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(600);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

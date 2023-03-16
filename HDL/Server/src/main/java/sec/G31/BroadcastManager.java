@@ -20,14 +20,14 @@ public class BroadcastManager
     private PerfectAuthChannel _PAChannel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private IBFT _ibft;
-    private BlockingQueue<Message> _receivedMessagesQueue;
+    //private BlockingQueue<Message> _receivedMessagesQueue;
     private int _consensusInstance;
 
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
         _broadcastNeighbors = neighbours;
         _PAChannel = new PerfectAuthChannel(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
-        _receivedMessagesQueue = new ArrayBlockingQueue<Message>(10);
+        //_receivedMessagesQueue = new ArrayBlockingQueue<Message>(10);
         _consensusInstance = 1;
     } 
 
@@ -69,7 +69,7 @@ public class BroadcastManager
 
                 synchronized(this){
                     msg.setInstance(_consensusInstance);
-                    _receivedMessagesQueue.add(msg);
+                    //_receivedMessagesQueue.add(msg);
                     _consensusInstance++;
                     while(_ibft.getConsensusInstance() < msg.getInstance()){
                         try {
@@ -80,13 +80,10 @@ public class BroadcastManager
                             e.printStackTrace();
                         }
                     }
-                    try {
-                        Message m = _receivedMessagesQueue.take();
-                        System.out.println("Starting IBFT for instance " + m.getInstance());
-                        _ibft.start(m.getValue(), m.getInstance(), m.getSenderPort());
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    
+                    //Message m = _receivedMessagesQueue.take();
+                    System.out.println("Starting IBFT for instance " + msg.getInstance());
+                    _ibft.start(msg.getValue(), msg.getInstance(), msg.getSenderPort());
                 }
                 //int instance = _ibft.getConsensusInstance();
                 //System.out.println("Starting IBFT");

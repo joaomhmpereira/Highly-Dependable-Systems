@@ -200,4 +200,41 @@ public class AppClientTest
         assertEquals(finalBlockchainValue, thirdServer.getServer().getBlockchainString());
         assertEquals(finalBlockchainValue, fourthServer.getServer().getBlockchainString());
     }
+
+    /**
+     * Unit test: 2 consensus instances, 2 clients, 3 correct servers, 1 faulty server
+     * should decide the same value
+     */
+    @Test
+    public void threeConsensusInstancestwoClientsOneFaultyServer(){
+        final String finalBlockchainValue = "Message1.Message2.Message3.";
+        final String valueToDecide1 = "Message1";
+        final String valueToDecide2 = "Message2";
+        final String valueToDecide3 = "Message3";
+
+        // Create 4 servers
+        App secondServer = new App(2, "127.0.0.1", 9446, "NF", "N", 1, "../configs/config5_4.txt");
+        App thirdServer = new App(3, "127.0.0.1", 9447, "NF", "N", 1, "../configs/config5_4.txt");
+        App fourthServer = new App(4, "127.0.0.1", 9448, "F", "N", 1, "../configs/config5_4.txt");
+        App leader = new App(1, "127.0.0.1", 9445, "NF", "Y", 1, "../configs/config5_4.txt");
+        AppClient client1 = new AppClient(1, "../configs/config5_4.txt", "127.0.0.1", 9560);
+        AppClient client2 = new AppClient(2, "../configs/config5_4.txt", "127.0.0.1", 9561);
+
+
+        client1.submitValue(valueToDecide1);
+        client2.submitValue(valueToDecide2);
+        client1.submitValue(valueToDecide3);
+
+        // Wait for the value2 to be decided
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(finalBlockchainValue, leader.getServer().getBlockchainString());
+        assertEquals(finalBlockchainValue, secondServer.getServer().getBlockchainString());
+        assertEquals(finalBlockchainValue, thirdServer.getServer().getBlockchainString());
+        assertEquals(finalBlockchainValue, fourthServer.getServer().getBlockchainString());
+    }
 }

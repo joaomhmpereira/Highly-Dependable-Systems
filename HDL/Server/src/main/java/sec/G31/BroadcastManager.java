@@ -72,6 +72,7 @@ public class BroadcastManager
                     while(_ibft.getConsensusInstance() < msg.getInstance()){
                         try {
                             System.out.println("Not my turn (I'm instance " +  msg.getInstance() + "), waiting for instance " + _ibft.getConsensusInstance() + " to finish");
+                            // TO-DO: saber se quando damos notify vamos tirar sempre a primeira mensagem que ficou em wait 
                             wait();
                             
                         } catch (InterruptedException e) {

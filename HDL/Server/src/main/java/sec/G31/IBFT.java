@@ -21,7 +21,7 @@ public class IBFT
     private final static Logger LOGGER = Logger.getLogger(IBFT.class.getName());
 
     private Server _server;
-    private int _leader; // algorithm 3 and 4 whill change this
+    private int _leader; // algorithm 3 and 4 will change this
     
     // algorithm variables
     private BroadcastManager _broadcast; // broadcast 
@@ -37,8 +37,8 @@ public class IBFT
     //private int _numCommitsReceived; // 
     private int _F; // faulty nodes
     private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
-    private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of guys that sent us prepare> 
-    private Hashtable<String, ArrayList<Integer>> _commitQuorum; // <value, list of guys that sent us commit> 
+    private Hashtable<String, ArrayList<Integer>> _prepareQuorum; // <value, list of ports that sent us prepare> 
+    private Hashtable<String, ArrayList<Integer>> _commitQuorum; // <value, list of ports that sent us commit> 
     private final String PREPARE_MSG = "PREPARE";
     private final String PRE_PREPARE_MSG = "PRE-PREPARE";
     private final String COMMIT_MSG = "COMMIT";
@@ -132,11 +132,11 @@ public class IBFT
         // DECIDE -> dar append da string à blockchain
         LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
         //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
-        if (_server.getId() == _leader){
+        //if (_server.getId() == _leader){
             //System.out.println("SENDING DECIDE TO CLIENT");
-            DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId(), _instance);
-            _broadcast.sendDecide(decideMessage, _clientPort);
-        }
+        DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId(), _instance);
+        _broadcast.sendDecide(decideMessage, _clientPort);
+        //}
         _server.addToBlockchain(msg.getValue());
         _instance += 1;
 
@@ -144,7 +144,7 @@ public class IBFT
         //LOGGER.info("[SERVER " + _server.getId() + "] CLEANING UP");;
         this.cleanup();
         synchronized(_broadcast){
-            _broadcast.notify();
+            _broadcast.notifyAll();
         }
     }
 

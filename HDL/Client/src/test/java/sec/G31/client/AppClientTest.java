@@ -26,7 +26,7 @@ public class AppClientTest
 
         // Wait for the value to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -53,7 +53,7 @@ public class AppClientTest
 
         // Wait for the value to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -86,7 +86,7 @@ public class AppClientTest
 
         // Wait for the value to be decided
         try {
-            Thread.sleep(500);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -122,7 +122,7 @@ public class AppClientTest
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(600);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -155,7 +155,7 @@ public class AppClientTest
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(600);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -190,7 +190,7 @@ public class AppClientTest
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(600);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

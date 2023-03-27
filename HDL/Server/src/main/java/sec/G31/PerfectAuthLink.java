@@ -12,12 +12,10 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Hashtable;
 
-/**
- * TO-DO: implementar a autenticacao
- */
-public class PerfectAuthChannel {
+
+public class PerfectAuthLink {
     //private final static Logger LOGGER = Logger.getLogger(PerfectAuthChannel.class.getName());
-    private StubbornChannel _stubChannel;
+    private StubbornLink _stubChannel;
     private Server _server;
     private InetAddress _address;
     private int _port;
@@ -27,13 +25,13 @@ public class PerfectAuthChannel {
     private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
     private final String DIGEST_ALGO = "SHA-256";
 
-    public PerfectAuthChannel(BroadcastManager broadcastManager, Server server, InetAddress serverAddress,
+    public PerfectAuthLink(BroadcastManager broadcastManager, Server server, InetAddress serverAddress,
             int serverPort,
             Hashtable<Integer, Integer> broadcastNeighbours) {
         _server = server;
         _address = serverAddress;
         _port = serverPort;
-        _stubChannel = new StubbornChannel(this, _address, _port);
+        _stubChannel = new StubbornLink(this, _address, _port);
         _broadcastManager = broadcastManager;
         _broadcastNeighbors = broadcastNeighbours;
     }

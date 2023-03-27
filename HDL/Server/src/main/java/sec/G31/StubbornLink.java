@@ -7,13 +7,13 @@ import sec.G31.messages.*;
 
 import java.net.*;
 
-public class StubbornChannel
+public class StubbornLink
 {
     // private final static Logger LOGGER = Logger.getLogger(StubbornChannel.class.getName());
     private UDPchannel _UDPchannel;
     private InetAddress _address; 
     private int _port;
-    private PerfectAuthChannel _PACchannel;
+    private PerfectAuthLink _PACchannel;
     private List<Message> _receivedMessages;
     // <port, list<messages>> if a message is still in this list, the port hasn't acked the message 
     private ConcurrentHashMap<Integer, ArrayList<Message>> _currentlySendingMessages;
@@ -26,7 +26,7 @@ public class StubbornChannel
     /**
      * this will be part of a perfect auth channel
      */
-    public StubbornChannel(PerfectAuthChannel pac, InetAddress serverAddress, int serverPort){
+    public StubbornLink(PerfectAuthLink pac, InetAddress serverAddress, int serverPort){
         _address = serverAddress;
         _port = serverPort;
         _UDPchannel = new UDPchannel(this, _address, _port);

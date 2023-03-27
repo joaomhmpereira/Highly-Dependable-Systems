@@ -15,7 +15,7 @@ import sec.G31.messages.*;
 public class BroadcastManager
 {
     // attributes that are known to everyother guy 
-    private PerfectAuthChannel _PAChannel; // the channel that it uses for communication
+    private PerfectAuthLink _PAChannel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private IBFT _ibft;
     //private BlockingQueue<Message> _receivedMessagesQueue;
@@ -24,7 +24,7 @@ public class BroadcastManager
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
         _broadcastNeighbors = neighbours;
-        _PAChannel = new PerfectAuthChannel(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
+        _PAChannel = new PerfectAuthLink(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
         //_receivedMessagesQueue = new ArrayBlockingQueue<Message>(10);
         _consensusInstance = 1;
     } 

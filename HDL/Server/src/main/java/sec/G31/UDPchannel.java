@@ -6,11 +6,11 @@ import java.net.*;
 
 public class UDPchannel 
 {
-    private StubbornChannel _stubChannel;
+    private StubbornLink _stubChannel;
     private UDPserver _server;
     private DatagramSocket _socket;
 
-    public UDPchannel(StubbornChannel channel, InetAddress address, int serverPort){
+    public UDPchannel(StubbornLink channel, InetAddress address, int serverPort){
         try{
             _stubChannel = channel;
             _socket = new DatagramSocket(serverPort);

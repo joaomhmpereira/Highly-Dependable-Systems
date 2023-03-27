@@ -2,7 +2,7 @@
 
 ## Instructions to execute the project and test it 'freely'
 1. Start by installing all necessary dependencies. To do so, run the following command on the root directory (HDL)
-    - `mvn package -DskipTests`
+    - `mvn clean install -DskipTests`
 2. After that, compile the project code. To do so, run the following command on the root directory (HDL):
     - `mvn clean compile`
 3. Then, simply spawn the desired number of processes following these instructions:

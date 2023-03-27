@@ -55,14 +55,16 @@ public class StubbornClient
             }
 
             public void run(){
+                int timeout = 100;
                 while(_currentlySendingMessages.get(_port).contains(_msg)){
                     //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                     _udpChannel.sendMessage(_dest, _port, _msg);
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(timeout);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    timeout *= 2;
                 }
                 ////System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                 //_udpChannel.sendMessage(_dest, _port, _msg);

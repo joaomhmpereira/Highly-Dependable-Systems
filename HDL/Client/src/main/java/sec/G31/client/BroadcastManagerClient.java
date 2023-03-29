@@ -2,6 +2,8 @@ package sec.G31.client;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
+
 import sec.G31.messages.*;
 
 // nao sei se vai ter que ser uma thread actually 
@@ -18,6 +20,7 @@ public class BroadcastManagerClient
     private int _clientId;
     private Hashtable<String, ArrayList<Integer>> _decidedQuorum; // <value, list of guys that sent us decided>
     private int _lastDecidedInstance;
+    private List<Integer> _decidedInstances;
 
 
     public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId){
@@ -25,7 +28,8 @@ public class BroadcastManagerClient
         _broadcastServers = servers;
         _clientId = clientId;
         _decidedQuorum = new Hashtable<String, ArrayList<Integer>>();
-        _lastDecidedInstance = 1; // last instance that we know decided 
+        _lastDecidedInstance = 1; // last instance that we know decided
+        _decidedInstances = new ArrayList<Integer>(); 
     }
     
     public void receivedMessage(DecidedMessage msg){
@@ -40,7 +44,7 @@ public class BroadcastManagerClient
      */
     public void receiveDecided(DecidedMessage msg){
         // drop if older
-        if(msg.getInstance() < _lastDecidedInstance){
+        if(msg.getInstance() < _lastDecidedInstance || _decidedInstances.contains(msg.getInstance())){
             return;
         }
         // we haven't decided and we don't have this msg 
@@ -65,9 +69,11 @@ public class BroadcastManagerClient
             //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
             
             // only decide if there is a quorum
-            // TO-DO: what will be the size of the quorum
+            // TODO: what will be the size of the quorum
             if(_decidedQuorum.get(value).size() >= 3){ 
-                _lastDecidedInstance = msg.getInstance(); 
+                //System.out.println("[CLIENT " + _clientId + "] Received Decided Quorum");
+                _lastDecidedInstance = msg.getInstance();
+                _decidedInstances.add(msg.getInstance());
                 this.receivedMessage(msg); 
             }
         }

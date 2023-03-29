@@ -76,7 +76,7 @@ public class PerfectAuthClient {
             // verify that it has came from the correct port and with proper authentication
             if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
                 //System.out.println("PAC:: message verified");
-                _broadcastManager.receivedMessage(msg); // inform the upper layer
+                _broadcastManager.receiveDecided(msg); // inform the upper layer
             }
 
         } catch (Exception e) {

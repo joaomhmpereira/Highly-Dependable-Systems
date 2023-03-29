@@ -9,7 +9,6 @@ import sec.G31.messages.Message;
 import java.util.ArrayList;
 
 
-// nao sei se vai ter que ser uma thread actually 
 
 /**
  * IBFT will be responsible for the start and control over the IBFT 
@@ -128,20 +127,15 @@ public class IBFT
      * when we receive a quorum of commit
      */
     public void receivedCommitQuorum(Message msg){
-        // stop timer -> ainda nao precisamos porque ainda nao ha rondas
         // DECIDE -> dar append da string à blockchain
         LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
-        //System.out.println("===== DECIDIMOS ===== ---> " + msg.getValue());
-        //if (_server.getId() == _leader){
-            //System.out.println("SENDING DECIDE TO CLIENT");
+
+        // send decided message to client
         DecidedMessage decideMessage = new DecidedMessage(msg.getValue(), _server.getId(), _instance);
         _broadcast.sendDecide(decideMessage, _clientPort);
-        //}
         _server.addToBlockchain(msg.getValue());
         _instance += 1;
 
-        //System.out.println("IBFT:: Blockchain: " + _server.getBlockchain());
-        //LOGGER.info("[SERVER " + _server.getId() + "] CLEANING UP");;
         this.cleanup();
         synchronized(_broadcast){
             _broadcast.notifyAll();

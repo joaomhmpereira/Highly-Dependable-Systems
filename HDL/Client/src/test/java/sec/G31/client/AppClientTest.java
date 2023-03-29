@@ -22,7 +22,7 @@ public class AppClientTest
         App leader = new App(1, "127.0.0.1", 4445, "NF", "Y", 1, "../configs/config1_4.txt");
         AppClient client = new AppClient(1, "../configs/config1_4.txt", "127.0.0.1", 9555);
 
-        client.submitValue(valueToDecide);
+        //client.submitValue(valueToDecide);
 
         // Wait for the value to be decided
         try {
@@ -49,7 +49,7 @@ public class AppClientTest
         App fourthServer = new App(4, "127.0.0.1", 5448, "F", "N", 1, "../configs/config2_4.txt");
         AppClient client = new AppClient(1, "../configs/config2_4.txt", "127.0.0.1", 9556);
 
-        client.submitValue(valueToDecide);
+        //client.submitValue(valueToDecide);
 
         // Wait for the value to be decided
         try {
@@ -82,7 +82,7 @@ public class AppClientTest
         App leader = new App(1, "127.0.0.1", 6445, "NF", "Y", 2, "../configs/config1_7.txt");
         AppClient client = new AppClient(1, "../configs/config1_7.txt", "127.0.0.1", 9557);
 
-        client.submitValue(valueToDecide);
+        //client.submitValue(valueToDecide);
 
         // Wait for the value to be decided
         try {
@@ -117,8 +117,8 @@ public class AppClientTest
         App leader = new App(1, "127.0.0.1", 7445, "NF", "Y", 1, "../configs/config3_4.txt");
         AppClient client = new AppClient(1, "../configs/config3_4.txt", "127.0.0.1", 9558);
 
-        client.submitValue(valueToDecide1);
-        client.submitValue(valueToDecide2);
+        //client.submitValue(valueToDecide1);
+        //client.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {
@@ -150,8 +150,8 @@ public class AppClientTest
         App leader = new App(1, "127.0.0.1", 8445, "NF", "Y", 1, "../configs/config4_4.txt");
         AppClient client = new AppClient(1, "../configs/config4_4.txt", "127.0.0.1", 9559);
 
-        client.submitValue(valueToDecide1);
-        client.submitValue(valueToDecide2);
+        //client.submitValue(valueToDecide1);
+        //client.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {
@@ -185,8 +185,8 @@ public class AppClientTest
         AppClient client2 = new AppClient(2, "../configs/config5_4.txt", "127.0.0.1", 9561);
 
 
-        client1.submitValue(valueToDecide1);
-        client2.submitValue(valueToDecide2);
+        //client1.submitValue(valueToDecide1);
+        //client2.submitValue(valueToDecide2);
 
         // Wait for the value2 to be decided
         try {

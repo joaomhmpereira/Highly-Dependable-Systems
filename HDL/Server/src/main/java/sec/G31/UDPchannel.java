@@ -67,7 +67,5 @@ public class UDPchannel
         AckMessage ack = new AckMessage(msg, port);
         this.sendAck(address, port, ack);
         _stubChannel.receivedMessage(msg, port, address);
-
     }
-
 }

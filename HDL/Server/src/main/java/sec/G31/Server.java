@@ -1,5 +1,8 @@
 package sec.G31;
 import java.util.logging.Logger;
+
+import sec.G31.utils.TransactionBlock;
+
 import java.net.*;
 import java.util.Hashtable;
 
@@ -64,11 +67,11 @@ public class Server
         return _faultType.equals("F"); 
     }
 
-    public void addToBlockchain(String msg){
-        _blockchain.addMessage(msg);
+    public void addToBlockchain(TransactionBlock block){
+        _blockchain.addTransactionBlock(block);
     }
 
-    public String getLastDecidedValue(){
+    public TransactionBlock getLastDecidedValue(){
         return _blockchain.getLastDecidedValue();
     }
 

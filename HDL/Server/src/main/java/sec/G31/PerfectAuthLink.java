@@ -22,7 +22,7 @@ public class PerfectAuthLink {
     private BroadcastManager _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private final String _keyPath = "../keys/";
-    private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
+    private final String CIPHER_ALGO = "RSA/ECB/PKCS1PADDING";
     private final String DIGEST_ALGO = "SHA-256";
 
     public PerfectAuthLink(BroadcastManager broadcastManager, Server server, InetAddress serverAddress,
@@ -101,19 +101,23 @@ public class PerfectAuthLink {
      */
     public void receivedMessage(Message msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
+        if (msg.getType().equals("CREATE")){ // TODO: if its a message to create an account do we need to verify it? if yes, with what key?
+            _broadcastManager.receivedMessage(msg, port); // inform the upper layer
+            return;
+        }
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (!msg.getType().equals("START")){
+            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE")){
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
-                    _broadcastManager.receivedMessage(msg); // inform the upper layer
-                } else {
-                    //System.out.println("PAC:: message from " + msg.getSenderId() + " " + msg + " was not verified");
+                    _broadcastManager.receivedMessage(msg, port); // inform the upper layer
                 }
             } else { // if message comes from client we don't have to verify the port
                 if (verifyMessage(msg)) {
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
-                    _broadcastManager.receivedMessage(msg); // inform the upper layer
+                    _broadcastManager.receivedMessage(msg, port); // inform the upper layer
+                } else {
+                    System.out.println("PAC:: message not verified");
                 }
             }
             
@@ -159,14 +163,13 @@ public class PerfectAuthLink {
      */
     public Boolean verifyMessage(Message msg) throws Exception {
         String serverKeyPath;
-        if (msg.getType().equals("START")){ // if it is a start message, the key is in the clients folder
+        if (msg.getType().equals("START") || msg.getType().equals("BALANCE")){ // if it is a start message, the key is in the clients folder
             serverKeyPath = _keyPath + "clients/" + msg.getSenderId() + "/public_key.der";
         } else {
             serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
         }
         //String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
         PublicKey key = readPublicKey(serverKeyPath);
-
         // decode from B64
         byte[] cipheredDigestBytes = Base64.getDecoder().decode(msg.getCipheredDigest());
 
@@ -184,7 +187,6 @@ public class PerfectAuthLink {
         MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
         messageDigest.update(plainBytes);
         byte[] digestBytes = messageDigest.digest();
-
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
     }
 }

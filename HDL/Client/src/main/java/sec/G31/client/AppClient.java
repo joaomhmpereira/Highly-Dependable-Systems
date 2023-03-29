@@ -2,8 +2,13 @@ package sec.G31.client;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
+
 import sec.G31.messages.Message;
+import sec.G31.messages.TransactionMessage;
 
 /**
  * Hello world!
@@ -80,32 +85,84 @@ public class AppClient
             BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId);
             
             Scanner inputScanner = new Scanner(System.in);
-            System.out.println("Enter a new message (type \"QUIT\" to end server):");
+            System.out.print("Available commands:\n [1] TRANSFER - to make a transfer\n [2] BALANCE - to check an accounts balance\n [3] CREATE - to create an new account.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");
             String newMessage = "";
             //System.out.println("You entered:" + newMessage);
             while(true){
                 newMessage = inputScanner.nextLine();
-                if (newMessage.equals("QUIT")) {
+                if (newMessage.equals("4")) {
                     System.out.println("=== Goodbye Client " + _clientId + " ===");
                     break;
                 }
-                //InitInstance msg = new InitInstance(_clientId, newMessage);
-                Message msg = new Message("START", newMessage, _clientId, _port, _nonceCounter);
-                // broadcast value to all servers
-                _broadcastManager.sendBroadcast(msg);
-                // to diferentiate the next message even if the content is equal
+                
+                /**
+                 *  TRANSFER 
+                 */
+                else if (newMessage.equals("1")){
+                    System.out.println("Enter the source public key:");
+                    String sourcePath = inputScanner.nextLine();
+                    PublicKey source = readPublicKey(sourcePath);
+                    System.out.println("Enter the destination public key:");
+                    String destinationPath = inputScanner.nextLine();
+                    PublicKey destination = readPublicKey(destinationPath);
+                    System.out.println("Enter the amount:");
+                    int amount = Integer.parseInt(inputScanner.nextLine());
+                    TransactionMessage transaction = new TransactionMessage(source, destination, amount);
+                    Message msg = new Message("START", transaction, _clientId, _port, _nonceCounter);
+                    _broadcastManager.sendBroadcast(msg);
+                } 
+                /**
+                 * CHECK BALANCE
+                 */
+                else if (newMessage.equals("2")){
+                    System.out.println("Enter the public key:");
+                    String publicKeyPath = inputScanner.nextLine();
+                    PublicKey publicKey = readPublicKey(publicKeyPath);
+                    Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
+                    _broadcastManager.sendBroadcast(msg);
+                }
+
+                /**
+                 * CREATE ACCOUNT
+                 */
+                else if (newMessage.equals("3")){
+                    System.out.println("Enter the public key:");
+                    String publicKeyPath = inputScanner.nextLine();
+                    PublicKey publicKey = readPublicKey(publicKeyPath);
+                    Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);
+                    _broadcastManager.sendBroadcast(msg);
+                }
                 _nonceCounter++;
+                System.out.print("Available commands:\n [1] TRANSFER - to make a transfer\n [2] BALANCE - to check an accounts balance\n [3] CREATE - to create an new account.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");
             }
             inputScanner.close();
             System.exit(0);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
-    public void submitValue(String value){
-        Message msg = new Message("START", value, _clientId, _port, _nonceCounter);
+    public void submitValue(PublicKey source, PublicKey destination, int amout){
+        TransactionMessage transaction = new TransactionMessage(source, destination, amout);
+        Message msg = new Message("START", transaction, _clientId, _port, _nonceCounter);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
+    }
+
+    private static byte[] readFile(String path) throws FileNotFoundException, IOException {
+        FileInputStream fis = new FileInputStream(path);
+        byte[] content = new byte[fis.available()];
+        fis.read(content);
+        fis.close();
+        return content;
+    }
+
+
+    public static PublicKey readPublicKey(String publicKeyPath) throws Exception {
+        byte[] pubEncoded = readFile(publicKeyPath);
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
+        KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
+        PublicKey pub = keyFacPub.generatePublic(pubSpec);
+        return pub;
     }
 }

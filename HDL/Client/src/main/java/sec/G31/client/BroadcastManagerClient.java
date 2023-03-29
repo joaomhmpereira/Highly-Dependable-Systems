@@ -42,7 +42,7 @@ public class BroadcastManagerClient
      * IMPORTANT: 
      *  we will not process every decided from an older instance 
      */
-    public void receiveDecided(DecidedMessage msg){
+    public void receivedDecidedTransaction(DecidedMessage msg){
         // drop if older
         if(msg.getInstance() < _lastDecidedInstance || _decidedInstances.contains(msg.getInstance())){
             return;
@@ -65,9 +65,6 @@ public class BroadcastManagerClient
                     }
                 }
             }
-
-            //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
-            
             // only decide if there is a quorum
             // TODO: what will be the size of the quorum
             if(_decidedQuorum.get(value).size() >= 3){ 
@@ -77,7 +74,38 @@ public class BroadcastManagerClient
                 this.receivedMessage(msg); 
             }
         }
-    } 
+    }
+
+    public void receivedDecidedCreate(DecidedMessage msg){
+        if (msg.getValue().equals("Success")) {
+            System.out.println("[CLIENT " + _clientId + "] Account created sucessfully");
+        } else {
+            System.out.println("[CLIENT " + _clientId + "] Account creation failed");
+        }
+    }
+
+    public void receivedDecidedBalance(DecidedMessage msg){
+        if (msg.getBalance() != -1)
+            System.out.println("[CLIENT " + _clientId + "] Balance: " + msg.getBalance());
+        else 
+            System.out.println("[CLIENT " + _clientId + "] Balance request failed");
+    }
+    
+    public void receivedDecided(DecidedMessage msg){
+        switch (msg.getType()) {
+            case "BALANCE":
+                this.receivedDecidedBalance(msg);
+                break;
+            case "TRANSFER":
+                this.receivedDecidedTransaction(msg);
+                break;
+            case "CREATE":
+                this.receivedDecidedCreate(msg);
+                break;
+            default:
+                break;
+        }
+    }
 
     /**
      * sends a message to every server

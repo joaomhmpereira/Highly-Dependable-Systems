@@ -139,7 +139,6 @@ public class StubbornLink
     }
 
     public void receivedMessage(Message msg, int port, InetAddress address){
-        //LOGGER.info("SC:: received message");
         if (_receivedMessages.contains(msg)){
             //System.out.println("SC:: received message already");
             return;

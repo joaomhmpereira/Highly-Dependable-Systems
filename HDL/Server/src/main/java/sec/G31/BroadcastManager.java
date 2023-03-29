@@ -18,24 +18,17 @@ public class BroadcastManager
     private PerfectAuthLink _PAChannel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private IBFT _ibft;
-    //private BlockingQueue<Message> _receivedMessagesQueue;
     private int _consensusInstance;
 
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
         _broadcastNeighbors = neighbours;
         _PAChannel = new PerfectAuthLink(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
-        //_receivedMessagesQueue = new ArrayBlockingQueue<Message>(10);
         _consensusInstance = 1;
     } 
 
-    /**
-     * when it was received a message we must know 
-     * to whom it may concern
-     * we need to know the object type and if there is an 
-     * object of that type in our database
-     */
-    public void receivedMessage(Message msg){
+
+    public void receivedMessage(Message msg, int clientPort){
         //System.out.println(msg.toString());
         String type = msg.getType();
         switch(type){
@@ -51,42 +44,32 @@ public class BroadcastManager
                 //System.out.println("received commit: " + msg.toString());
                 _ibft.receiveCommit(msg);
                 break;
+            case "CREATE":
+                _ibft.createAccount(msg.getPublicKey(), clientPort);
+                break;
+            case "BALANCE":
+                _ibft.checkBalance(msg.getPublicKey(), clientPort);
+                break;
             case "START":
-                /**
-                 * e ele receber duas para a mesma instancia? 
-                 * ter uma flag que diz que ja comecou o ibft para aquela instancia com um value,
-                 * ele depois vai ter de mandar ack a esse gajo para nao processarmos 
-                 * uma mensagem que ja processamos. 
-                 * Os outros pedidos de start vao ser outra vez enviados por causa do 
-                 * stubborn channel, por isso podemos simplesmente descartar esses
-                 * pedidos por agora
-                 * 
-                 * ele aumenta a instance quando decide no IBFT
-                */
-                //System.out.println("received start: " + msg.toString());
-
                 synchronized(this){
                     msg.setInstance(_consensusInstance);
-                    //_receivedMessagesQueue.add(msg);
                     _consensusInstance++;
                     while(_ibft.getConsensusInstance() < msg.getInstance()){
                         try {
                             System.out.println("Not my turn (I'm instance " +  msg.getInstance() + "), waiting for instance " + _ibft.getConsensusInstance() + " to finish");
-                            // TO-DO: saber se quando damos notify vamos tirar sempre a primeira mensagem que ficou em wait 
                             wait();
-                            
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
                     
-                    //Message m = _receivedMessagesQueue.take();
                     System.out.println("Starting IBFT for instance " + msg.getInstance());
                     _ibft.start(msg.getValue(), msg.getInstance(), msg.getSenderPort());
                 }
-                //int instance = _ibft.getConsensusInstance();
-                //System.out.println("Starting IBFT");
-                //_ibft.start(msg.getValue(), instance, msg.getSenderPort());
+                break;
+            default:
+                System.out.println("Unknown message type: " + type);
+                break;                
         }
     }
 

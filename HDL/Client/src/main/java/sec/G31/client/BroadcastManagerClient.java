@@ -42,7 +42,7 @@ public class BroadcastManagerClient
      * IMPORTANT: 
      *  we will not process every decided from an older instance 
      */
-    public void receivedDecidedTransaction(DecidedMessage msg){
+    public void receivedDecidedIDK(DecidedMessage msg){
         // drop if older
         if(msg.getInstance() < _lastDecidedInstance || _decidedInstances.contains(msg.getInstance())){
             return;
@@ -90,6 +90,14 @@ public class BroadcastManagerClient
         else 
             System.out.println("[CLIENT " + _clientId + "] Balance request failed");
     }
+
+    public void receivedDecidedTransaction(DecidedMessage msg){
+        if (msg.getValue().equals("Success")) {
+            System.out.println("[CLIENT " + _clientId + "] Transaction sucessful");
+        } else {
+            System.out.println("[CLIENT " + _clientId + "] " + msg.getValue() );
+        }
+    }
     
     public void receivedDecided(DecidedMessage msg){
         switch (msg.getType()) {
@@ -97,10 +105,13 @@ public class BroadcastManagerClient
                 this.receivedDecidedBalance(msg);
                 break;
             case "TRANSFER":
-                this.receivedDecidedTransaction(msg);
+                this.receivedDecidedIDK(msg);
                 break;
             case "CREATE":
                 this.receivedDecidedCreate(msg);
+                break;
+            case "TRANSACTION":
+                this.receivedDecidedTransaction(msg);
                 break;
             default:
                 break;

@@ -97,7 +97,7 @@ public class Message implements Serializable {
     public String stringForDigest() {
         if (_publicKey != null)
             return _type + "." + _senderId + "." + _senderPort + "." + _nonce + ".";
-        return _type + "." + _value + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
+        return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
     }
 
     @Override
@@ -111,11 +111,13 @@ public class Message implements Serializable {
             return false;
         }
         Message msg = (Message) obj;
-        if(_value !=  null)
-            return msg.getValue().equals(_value) && msg.getType().equals(_type)
+        if(_value !=  null){
+            return msg.getType().equals(_type) && msg.getValue().equals(_value)
                 && msg.getRound() == _round && msg.getInstance() == _instance 
                 && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort 
                 && msg.getNonce() == _nonce;
+        }
+            
         else 
             return msg.getType().equals(_type) && msg.getSenderId() == _senderId 
                 && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;

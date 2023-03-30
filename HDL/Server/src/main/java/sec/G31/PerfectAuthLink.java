@@ -107,7 +107,7 @@ public class PerfectAuthLink {
         }
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE")){
+            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE") && !msg.getType().equals("TRANSACTION")){
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
@@ -163,7 +163,7 @@ public class PerfectAuthLink {
      */
     public Boolean verifyMessage(Message msg) throws Exception {
         String serverKeyPath;
-        if (msg.getType().equals("START") || msg.getType().equals("BALANCE")){ // if it is a start message, the key is in the clients folder
+        if (msg.getType().equals("START") || msg.getType().equals("BALANCE") || msg.getType().equals("TRANSACTION")){ // if it is a start message, the key is in the clients folder
             serverKeyPath = _keyPath + "clients/" + msg.getSenderId() + "/public_key.der";
         } else {
             serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
@@ -187,6 +187,7 @@ public class PerfectAuthLink {
         MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
         messageDigest.update(plainBytes);
         byte[] digestBytes = messageDigest.digest();
+
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
     }
 }

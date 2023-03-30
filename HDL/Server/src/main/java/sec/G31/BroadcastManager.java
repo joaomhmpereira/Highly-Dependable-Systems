@@ -50,6 +50,10 @@ public class BroadcastManager
             case "BALANCE":
                 _ibft.checkBalance(msg.getPublicKey(), clientPort);
                 break;
+            case "TRANSACTION":
+                System.out.println("Received Transaction");
+                _ibft.makeTransaction(msg.getValue(), clientPort);
+                break;
             case "START":
                 synchronized(this){
                     msg.setInstance(_consensusInstance);

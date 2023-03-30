@@ -2,6 +2,7 @@ package sec.G31.messages;
 
 import java.io.Serializable;
 import java.security.PublicKey;
+import java.util.Base64;
 
 public class TransactionMessage implements Serializable {
 
@@ -25,6 +26,19 @@ public class TransactionMessage implements Serializable {
 
     public int getAmount() {
         return _amount;
+    }
+
+    @Override
+    public String toString() {
+        byte[] sourceBytes = _source.getEncoded();
+        byte[] destBytes = _destination.getEncoded();
+        String b46source = Base64.getEncoder().encodeToString(sourceBytes);
+        String b46dest = Base64.getEncoder().encodeToString(destBytes);
+        return "TransactionMessage{" +
+                "source=" + b46source +
+                ", destination=" + b46dest +
+                ", amount=" + _amount +
+                '}';
     }
 
     @Override

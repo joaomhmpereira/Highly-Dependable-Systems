@@ -39,6 +39,7 @@ public class IBFT
     private boolean _decided;
     //private int _numCommitsReceived; // 
     private int _F; // faulty nodes
+    private int _nonceCounter;
     private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
     private Hashtable<TransactionMessage, ArrayList<Integer>> _prepareQuorum; // <value, list of ports that sent us prepare> 
     private Hashtable<TransactionMessage, ArrayList<Integer>> _commitQuorum; // <value, list of ports that sent us commit> 
@@ -76,6 +77,7 @@ public class IBFT
         _leader = 1; // just for this implementation
         _currentTransactionBlock = new TransactionBlock();
         _accounts = new Hashtable<PublicKey, Account>();
+        _nonceCounter = 0;
     }
 
     /**
@@ -87,13 +89,19 @@ public class IBFT
             // initial balance fixed value > 0
             Account newAccount = new Account(publicKey, 150);
             _accounts.put(publicKey, newAccount);
-            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), -1);
             System.out.println("[SERVER " + _server.getId() + "]: Account created successfully. Client: " + clientPort);
-            _broadcast.sendDecide(decidedMessage, clientPort);
+            if (_server.isLeader(_currentRound)){
+                DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), -1, _nonceCounter);
+                _broadcast.sendDecide(decidedMessage, clientPort);
+                _nonceCounter++;
+            } // TODO sending only if we're leader
         } else {
             System.out.println("Account already exists");
-            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), -1);
-            _broadcast.sendDecide(decidedMessage, clientPort);
+            if (_server.isLeader(_currentRound)){
+                DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), -1, _nonceCounter);
+                _broadcast.sendDecide(decidedMessage, clientPort);
+                _nonceCounter++;
+            }   
         }
     }
 
@@ -101,14 +109,52 @@ public class IBFT
         if (_accounts.containsKey(publicKey)){
             synchronized (this){    // necessario??
                 Account account = _accounts.get(publicKey);
-                DecidedMessage decidedMessage = new DecidedMessage("BALANCE", account.getBalance(), _server.getId());
                 System.out.println("[SERVER " + _server.getId() + "]: Balance checked successfully. Client: " + clientPort);
-                _broadcast.sendDecide(decidedMessage, clientPort);
+                if (_server.isLeader(_currentRound)){
+                    DecidedMessage decidedMessage = new DecidedMessage("BALANCE", account.getBalance(), _server.getId(), _nonceCounter);
+                    _broadcast.sendDecide(decidedMessage, clientPort);
+                    _nonceCounter++;
+                } //TODO sending only if we're leader
             }
         } else {
-            DecidedMessage decidedMessage = new DecidedMessage("BALANCE", -1, _server.getId());
-            _broadcast.sendDecide(decidedMessage, clientPort);
+            if (_server.isLeader(_currentRound)) {
+                DecidedMessage decidedMessage = new DecidedMessage("BALANCE", -1, _server.getId(), _nonceCounter);
+                _broadcast.sendDecide(decidedMessage, clientPort);
+                _nonceCounter++;
+            }
             System.out.println("Account doesn't exist");
+        }
+    }
+
+    public void makeTransaction(TransactionMessage msg, int clientPort){
+        if (_accounts.containsKey(msg.getSource()) && _accounts.containsKey(msg.getDestination())){
+            synchronized (this) {
+                Account source = _accounts.get(msg.getSource());
+                Account destination = _accounts.get(msg.getDestination());
+                if (source.subtractBalance(msg.getAmount())){
+                    destination.addBalance(msg.getAmount());
+                    if (_server.isLeader(_currentRound)){
+                        DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Success", _server.getId(), -1, _nonceCounter);
+                        _broadcast.sendDecide(decidedMessage, clientPort);
+                    _nonceCounter++;
+                    }
+                } else {
+                    System.out.println("Not enough balance");
+                    if (_server.isLeader(_currentRound)){
+                        DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: Not enough balance.", _server.getId(), -1, _nonceCounter);
+                        _broadcast.sendDecide(decidedMessage, clientPort);
+                        _nonceCounter++;
+                    }
+                }
+            }
+            
+        } else {
+            System.out.println("one of the accounts doesn't exist");
+            if (_server.isLeader(_currentRound)){
+                DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: One of the accounts doesn't exist.", _server.getId(), -1, _nonceCounter);
+                _broadcast.sendDecide(decidedMessage, clientPort);
+                _nonceCounter++;
+            }
         }
     }
     
@@ -174,8 +220,9 @@ public class IBFT
         LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
 
         // send decided message to client
-        DecidedMessage decideMessage = new DecidedMessage("decided", _server.getId(), _instance);
+        DecidedMessage decideMessage = new DecidedMessage("decided", _server.getId(), _instance, _nonceCounter);
         _broadcast.sendDecide(decideMessage, _clientPort);
+        _nonceCounter++;
         if (_currentTransactionBlock.isCompleted()){ // if the block is completed -> add it to the blockchain and create new one
             _server.addToBlockchain(_currentTransactionBlock);
             _currentTransactionBlock = new TransactionBlock();

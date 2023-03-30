@@ -85,7 +85,7 @@ public class AppClient
             BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId);
             
             Scanner inputScanner = new Scanner(System.in);
-            System.out.print("Available commands:\n [1] TRANSFER - to make a transfer\n [2] BALANCE - to check an accounts balance\n [3] CREATE - to create an new account.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");
+            System.out.print("Available commands:\n [1] CREATE - to create an new account.\n [2] BALANCE - to check an accounts balance\n [3] TRANSFER - to make a transfer.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");
             String newMessage = "";
             //System.out.println("You entered:" + newMessage);
             while(true){
@@ -98,24 +98,24 @@ public class AppClient
                 /**
                  *  TRANSFER 
                  */
-                else if (newMessage.equals("1")){
-                    System.out.println("Enter the source public key:");
+                else if (newMessage.equals("3")){
+                    System.out.print("Enter the source public key:");
                     String sourcePath = inputScanner.nextLine();
                     PublicKey source = readPublicKey(sourcePath);
-                    System.out.println("Enter the destination public key:");
+                    System.out.print("Enter the destination public key:");
                     String destinationPath = inputScanner.nextLine();
                     PublicKey destination = readPublicKey(destinationPath);
-                    System.out.println("Enter the amount:");
+                    System.out.print("Enter the amount:");
                     int amount = Integer.parseInt(inputScanner.nextLine());
                     TransactionMessage transaction = new TransactionMessage(source, destination, amount);
-                    Message msg = new Message("START", transaction, _clientId, _port, _nonceCounter);
+                    Message msg = new Message("TRANSACTION", transaction, _clientId, _port, _nonceCounter);
                     _broadcastManager.sendBroadcast(msg);
                 } 
                 /**
                  * CHECK BALANCE
                  */
                 else if (newMessage.equals("2")){
-                    System.out.println("Enter the public key:");
+                    System.out.print("Enter the public key:");
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
                     Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
@@ -125,15 +125,14 @@ public class AppClient
                 /**
                  * CREATE ACCOUNT
                  */
-                else if (newMessage.equals("3")){
-                    System.out.println("Enter the public key:");
+                else if (newMessage.equals("1")){
+                    System.out.print("Enter the public key:");
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
                     Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);
                     _broadcastManager.sendBroadcast(msg);
                 }
                 _nonceCounter++;
-                System.out.print("Available commands:\n [1] TRANSFER - to make a transfer\n [2] BALANCE - to check an accounts balance\n [3] CREATE - to create an new account.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");
             }
             inputScanner.close();
             System.exit(0);

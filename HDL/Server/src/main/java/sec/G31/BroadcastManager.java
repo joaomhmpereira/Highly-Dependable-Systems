@@ -54,23 +54,23 @@ public class BroadcastManager
                 System.out.println("Received Transaction");
                 _ibft.makeTransaction(msg.getValue(), clientPort);
                 break;
-            case "START":
-                synchronized(this){
-                    msg.setInstance(_consensusInstance);
-                    _consensusInstance++;
-                    while(_ibft.getConsensusInstance() < msg.getInstance()){
-                        try {
-                            System.out.println("Not my turn (I'm instance " +  msg.getInstance() + "), waiting for instance " + _ibft.getConsensusInstance() + " to finish");
-                            wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    System.out.println("Starting IBFT for instance " + msg.getInstance());
-                    _ibft.start(msg.getValue(), msg.getInstance(), msg.getSenderPort());
-                }
-                break;
+            //case "START":
+            //    synchronized(this){
+            //        msg.setInstance(_consensusInstance);
+            //        _consensusInstance++;
+            //        while(_ibft.getConsensusInstance() < msg.getInstance()){
+            //            try {
+            //                System.out.println("Not my turn (I'm instance " +  msg.getInstance() + "), waiting for instance " + _ibft.getConsensusInstance() + " to finish");
+            //                wait();
+            //            } catch (InterruptedException e) {
+            //                e.printStackTrace();
+            //            }
+            //        }
+            //        
+            //        System.out.println("Starting IBFT for instance " + msg.getInstance());
+            //        _ibft.start(msg.getValue(), msg.getInstance(), msg.getSenderPort());
+            //    }
+            //    break;
             default:
                 System.out.println("Unknown message type: " + type);
                 break;                

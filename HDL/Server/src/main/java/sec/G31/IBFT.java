@@ -31,8 +31,8 @@ public class IBFT
     private int _instance; 
     private int _currentRound;
     private int _preparedRound;
-    private TransactionMessage _preparedValue;
-    private TransactionMessage _inputValue;
+    private TransactionBlock _preparedValue;
+    private TransactionBlock _inputValue;
     private int _clientPort;
     //private boolean _sentPrepare;
     private boolean _sentCommit; 
@@ -41,8 +41,8 @@ public class IBFT
     private int _F; // faulty nodes
     private int _nonceCounter;
     private List<Message> _receivedMessages = new ArrayList<>(); // stores the received messages
-    private Hashtable<TransactionMessage, ArrayList<Integer>> _prepareQuorum; // <value, list of ports that sent us prepare> 
-    private Hashtable<TransactionMessage, ArrayList<Integer>> _commitQuorum; // <value, list of ports that sent us commit> 
+    private Hashtable<TransactionBlock, ArrayList<Integer>> _prepareQuorum; // <value, list of ports that sent us prepare> 
+    private Hashtable<TransactionBlock, ArrayList<Integer>> _commitQuorum; // <value, list of ports that sent us commit> 
     private final String PREPARE_MSG = "PREPARE";
     private final String PRE_PREPARE_MSG = "PRE-PREPARE";
     private final String COMMIT_MSG = "COMMIT";
@@ -67,8 +67,8 @@ public class IBFT
         _currentRound = 0;
         _preparedRound = 0;
         //_preparedValue = "";
-        _prepareQuorum = new Hashtable<TransactionMessage, ArrayList<Integer>>();
-        _commitQuorum = new Hashtable<TransactionMessage, ArrayList<Integer>>();
+        _prepareQuorum = new Hashtable<TransactionBlock, ArrayList<Integer>>();
+        _commitQuorum = new Hashtable<TransactionBlock, ArrayList<Integer>>();
         _broadcast = new BroadcastManager(this, server, server.getBroadcastNeighbours());
         _F = faultyNodes; 
         //_sentPrepare = false;
@@ -136,7 +136,11 @@ public class IBFT
                     if (_server.isLeader(_currentRound)){
                         DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Success", _server.getId(), -1, _nonceCounter);
                         _broadcast.sendDecide(decidedMessage, clientPort);
-                    _nonceCounter++;
+                        _nonceCounter++;
+                    }
+                    _currentTransactionBlock.addTransaction(msg);
+                    if (_currentTransactionBlock.isCompleted()){
+                        this.start(_currentTransactionBlock, clientPort, clientPort);
                     }
                 } else {
                     System.out.println("Not enough balance");
@@ -174,7 +178,7 @@ public class IBFT
      * the server wants to send a new value 
      * for now there is only 1 instance and only 1 round so there is no problem
      */
-    public void start(TransactionMessage value, int instance, int clientPort){
+    public void start(TransactionBlock value, int instance, int clientPort){
         //LOGGER.info("IBFT:: started");
         //System.out.println("IBFT:: started instance: " + instance + " value: " + value);
         _inputValue = value;
@@ -189,12 +193,14 @@ public class IBFT
     }
 
 
-    public void sendPrepares(int instance, int round, TransactionMessage value){
+    public void sendPrepares(int instance, int round, TransactionBlock value){
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()){
             TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20);
-            prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineMessage, 1, _server.getPort());
+            TransactionBlock byzantineBlock = new TransactionBlock();
+            byzantineBlock.addTransaction(byzantineMessage);
+            prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineBlock, 1, _server.getPort());
             
         } else {
             prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId(), _server.getPort());
@@ -202,7 +208,7 @@ public class IBFT
         _broadcast.sendBroadcast(prepareMessage);
     }
 
-    public void receivedPrepareQuorum(int round, TransactionMessage value){
+    public void receivedPrepareQuorum(int round, TransactionBlock value){
         // for future reference of IBFT
         _preparedRound = round;
         _preparedValue = value;
@@ -217,26 +223,26 @@ public class IBFT
      */
     public void receivedCommitQuorum(Message msg){
         // DECIDE -> dar append da string à blockchain
-        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getValue());
+        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getBlock());
 
         // send decided message to client
-        DecidedMessage decideMessage = new DecidedMessage("decided", _server.getId(), _instance, _nonceCounter);
-        _broadcast.sendDecide(decideMessage, _clientPort);
-        _nonceCounter++;
-        if (_currentTransactionBlock.isCompleted()){ // if the block is completed -> add it to the blockchain and create new one
-            _server.addToBlockchain(_currentTransactionBlock);
-            _currentTransactionBlock = new TransactionBlock();
-            _currentTransactionBlock.addTransaction(msg.getValue());
-        } else {
-            _currentTransactionBlock.addTransaction(msg.getValue());
-        }
+        //DecidedMessage decideMessage = new DecidedMessage("decided", _server.getId(), _instance, _nonceCounter);
+        //_broadcast.sendDecide(decideMessage, _clientPort);
+        //_nonceCounter++;
+        //if (_currentTransactionBlock.isCompleted()){ // if the block is completed -> add it to the blockchain and create new one
+        //    _server.addToBlockchain(_currentTransactionBlock);
+        //    _currentTransactionBlock = new TransactionBlock();
+        //    _currentTransactionBlock.addTransaction(msg.getValue());
+        //} else {
+        //    _currentTransactionBlock.addTransaction(msg.getValue());
+        //}
         //_server.addToBlockchain(msg.getValue());
         _instance += 1;
 
         this.cleanup();
-        synchronized(_broadcast){
-            _broadcast.notifyAll();
-        }
+        //synchronized(_broadcast){
+        //    _broadcast.notifyAll();
+        //}
     }
 
 
@@ -252,7 +258,9 @@ public class IBFT
             // set timer to running
             //_sentPrepare = true;
             _receivedMessages.add(msg);
-            this.sendPrepares(_instance, _currentRound, msg.getValue());
+            System.out.println(" [SERVER " + _server.getId() + "] received pre-prepare from leader");
+            System.out.println(_inputValue.equals(msg.getBlock()));
+            this.sendPrepares(_instance, _currentRound, msg.getBlock());
         }
     }
 
@@ -269,11 +277,19 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound
                 && !_receivedMessages.contains(msg) && !_decided){
             _receivedMessages.add(msg);
-            TransactionMessage value = msg.getValue();
+            TransactionBlock value = msg.getBlock();
             //update the quorum or insert new entry if it isn't there
             // if still no one had sent prepare
+
             synchronized(this){
+                for (TransactionBlock block : _prepareQuorum.keySet()){
+                    if (value.equals(block)){
+                        System.out.println("Codes, 1: " + value.hashCode() + " 2 (in the quorum): " + block.hashCode());
+                        System.out.println("FOUND ONE");
+                    }
+                }
                 if (!_prepareQuorum.containsKey(value)) {
+                    System.out.println("Doesn't contain key, adding " + value.hashCode());
                     ArrayList<Integer> list = new ArrayList<Integer>();
                     list.add(msg.getSenderId());
                     _prepareQuorum.put(value, list);
@@ -286,7 +302,7 @@ public class IBFT
                 }
             }
 
-            //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value  + " -> " + _prepareQuorum.get(value).size());
+            System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value.hashCode()  + " -> " + _prepareQuorum.get(value).size());
             
             // only send one commit if we have already quorum
             if(_prepareQuorum.get(value).size() >= 2*_F+1 && !_sentCommit && !_decided){ // in case of quorum
@@ -309,7 +325,7 @@ public class IBFT
         if(msg.getInstance() == _instance && msg.getRound() == _currentRound
                 && !_receivedMessages.contains(msg) && !_decided){
             _receivedMessages.add(msg);
-            TransactionMessage value = msg.getValue();
+            TransactionBlock value = msg.getBlock();
             
             synchronized(this){
                 // if still no one had sent commit
@@ -331,7 +347,7 @@ public class IBFT
             // decide the value only one time
             if(_commitQuorum.get(value).size() >= 2*_F+1 && !_decided){
                 _decided = true;
-                //System.out.println("[SERVER " + _server.getId() + "] <<< received " + _commitQuorum.get(value).size() + " commits for the value >>> " + value);
+                System.out.println("[SERVER " + _server.getId() + "] <<< received " + _commitQuorum.get(value).size() + " commits for the value >>> " + value);
                 this.receivedCommitQuorum(msg); // we received a quorum
             }
         }

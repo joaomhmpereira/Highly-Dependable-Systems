@@ -3,11 +3,14 @@ package sec.G31.messages;
 import java.io.Serializable;
 import java.security.PublicKey;
 
+import sec.G31.utils.TransactionBlock;
+
 public class Message implements Serializable {
     private String _type;
     private int _instance;
     private int _round;
     private TransactionMessage _value;
+    private TransactionBlock _block;
     private int _senderId;
     private int _senderPort;
     private int _nonce; // to differentiate equal messages
@@ -15,15 +18,16 @@ public class Message implements Serializable {
     private String _cipheredDigest;
 
     // server -> server 
-    public Message(String type, int instance, int round, TransactionMessage value, int senderId, int senderPort) {
+    public Message(String type, int instance, int round, TransactionBlock block, int senderId, int senderPort) {
         _type = type;
-        _value = value;
+        _block = block;
         _round = round;
         _instance = instance;
         _senderId = senderId;
         _senderPort = senderPort;
         _nonce = -1;
         _publicKey = null;
+        _value = null;
     }
 
     // client -> server, a transaction message 
@@ -36,6 +40,7 @@ public class Message implements Serializable {
         _senderPort = senderPort;
         _nonce = nonce;
         _publicKey = null;
+        _block = null;
     }
 
     // client -> server, a check balance/create account message
@@ -48,10 +53,19 @@ public class Message implements Serializable {
         _senderPort = senderPort;
         _nonce = nonce;
         _publicKey = publicKey;
+        _block = null;
     }
 
     public String getType() {
         return _type;
+    }
+
+    public TransactionBlock getBlock() {
+        return _block;
+    }
+
+    public boolean isBlockSet(){
+        return _block != null;
     }
 
     public TransactionMessage getValue() {
@@ -97,7 +111,10 @@ public class Message implements Serializable {
     public String stringForDigest() {
         if (_publicKey != null)
             return _type + "." + _senderId + "." + _senderPort + "." + _nonce + ".";
-        return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
+        else if (this.isBlockSet())
+            return _type + "." + _block.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
+        else 
+            return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
     }
 
     @Override
@@ -117,7 +134,12 @@ public class Message implements Serializable {
                 && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort 
                 && msg.getNonce() == _nonce;
         }
-            
+        else if (this.isBlockSet()){
+            return msg.getType().equals(_type) && msg.getBlock().equals(_block)
+                && msg.getRound() == _round && msg.getInstance() == _instance 
+                && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort 
+                && msg.getNonce() == _nonce;
+        }
         else 
             return msg.getType().equals(_type) && msg.getSenderId() == _senderId 
                 && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;

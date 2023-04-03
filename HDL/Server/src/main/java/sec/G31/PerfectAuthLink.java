@@ -101,13 +101,10 @@ public class PerfectAuthLink {
      */
     public void receivedMessage(Message msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
-        if (msg.getType().equals("CREATE")){ // TODO: if its a message to create an account do we need to verify it? if yes, with what key?
-            _broadcastManager.receivedMessage(msg, port); // inform the upper layer
-            return;
-        }
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE") && !msg.getType().equals("TRANSACTION")){
+            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE") 
+                && !msg.getType().equals("TRANSACTION") && !msg.getType().equals("CREATE")) {
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
@@ -162,14 +159,16 @@ public class PerfectAuthLink {
      * @throws Exception
      */
     public Boolean verifyMessage(Message msg) throws Exception {
-        String serverKeyPath;
-        if (msg.getType().equals("START") || msg.getType().equals("BALANCE") || msg.getType().equals("TRANSACTION")){ // if it is a start message, the key is in the clients folder
-            serverKeyPath = _keyPath + "clients/" + msg.getSenderId() + "/public_key.der";
-        } else {
-            serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+        PublicKey key;
+        if (msg.getType().equals("CREATE") || msg.getType().equals("BALANCE")){ // if it's a START or BALANCE message, the key is the public key of the client
+            key = msg.getPublicKey();
+        } else if (msg.getType().equals("TRANSACTION")) { // if it's a TRANSACTION message, the key is the source public key of the transaction
+            key = msg.getValue().getSource();
+        } else { // else, the key is the public key of the server
+            String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+            key = readPublicKey(serverKeyPath);
         }
         //String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
-        PublicKey key = readPublicKey(serverKeyPath);
         // decode from B64
         byte[] cipheredDigestBytes = Base64.getDecoder().decode(msg.getCipheredDigest());
 

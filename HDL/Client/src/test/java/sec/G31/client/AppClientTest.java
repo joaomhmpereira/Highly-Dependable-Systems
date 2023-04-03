@@ -20,7 +20,7 @@ public class AppClientTest
         App thirdServer = new App(3, "127.0.0.1", 4447, "NF", "N", 1, "../configs/config1_4.txt");
         App fourthServer = new App(4, "127.0.0.1", 4448, "NF", "N", 1, "../configs/config1_4.txt");
         App leader = new App(1, "127.0.0.1", 4445, "NF", "Y", 1, "../configs/config1_4.txt");
-        AppClient client = new AppClient(1, "../configs/config1_4.txt", "127.0.0.1", 9555);
+        AppClient client = new AppClient(1, "../configs/config1_4.txt", "127.0.0.1", 9555, 0);
 
         //client.submitValue(valueToDecide);
 
@@ -47,7 +47,7 @@ public class AppClientTest
         App secondServer = new App(2, "127.0.0.1", 5446, "NF", "N", 1, "../configs/config2_4.txt");
         App thirdServer = new App(3, "127.0.0.1", 5447, "NF", "N", 1, "../configs/config2_4.txt");
         App fourthServer = new App(4, "127.0.0.1", 5448, "F", "N", 1, "../configs/config2_4.txt");
-        AppClient client = new AppClient(1, "../configs/config2_4.txt", "127.0.0.1", 9556);
+        AppClient client = new AppClient(1, "../configs/config2_4.txt", "127.0.0.1", 9556, 1);
 
         //client.submitValue(valueToDecide);
 
@@ -80,7 +80,7 @@ public class AppClientTest
         App sixthServer = new App(6, "127.0.0.1", 6450, "NF", "N", 2, "../configs/config1_7.txt");
         App seventhServer = new App(7, "127.0.0.1", 6451, "NF", "N", 2, "../configs/config1_7.txt");
         App leader = new App(1, "127.0.0.1", 6445, "NF", "Y", 2, "../configs/config1_7.txt");
-        AppClient client = new AppClient(1, "../configs/config1_7.txt", "127.0.0.1", 9557);
+        AppClient client = new AppClient(1, "../configs/config1_7.txt", "127.0.0.1", 9557, 2);
 
         //client.submitValue(valueToDecide);
 
@@ -115,7 +115,7 @@ public class AppClientTest
         App thirdServer = new App(3, "127.0.0.1", 7447, "NF", "N", 1, "../configs/config3_4.txt");
         App fourthServer = new App(4, "127.0.0.1", 7448, "NF", "N", 1, "../configs/config3_4.txt");
         App leader = new App(1, "127.0.0.1", 7445, "NF", "Y", 1, "../configs/config3_4.txt");
-        AppClient client = new AppClient(1, "../configs/config3_4.txt", "127.0.0.1", 9558);
+        AppClient client = new AppClient(1, "../configs/config3_4.txt", "127.0.0.1", 9558, 0);
 
         //client.submitValue(valueToDecide1);
         //client.submitValue(valueToDecide2);
@@ -148,7 +148,7 @@ public class AppClientTest
         App thirdServer = new App(3, "127.0.0.1", 8447, "NF", "N", 1, "../configs/config4_4.txt");
         App fourthServer = new App(4, "127.0.0.1", 8448, "F", "N", 1, "../configs/config4_4.txt");
         App leader = new App(1, "127.0.0.1", 8445, "NF", "Y", 1, "../configs/config4_4.txt");
-        AppClient client = new AppClient(1, "../configs/config4_4.txt", "127.0.0.1", 9559);
+        AppClient client = new AppClient(1, "../configs/config4_4.txt", "127.0.0.1", 9559, 1);
 
         //client.submitValue(valueToDecide1);
         //client.submitValue(valueToDecide2);
@@ -181,8 +181,8 @@ public class AppClientTest
         App thirdServer = new App(3, "127.0.0.1", 9447, "NF", "N", 1, "../configs/config5_4.txt");
         App fourthServer = new App(4, "127.0.0.1", 9448, "F", "N", 1, "../configs/config5_4.txt");
         App leader = new App(1, "127.0.0.1", 9445, "NF", "Y", 1, "../configs/config5_4.txt");
-        AppClient client1 = new AppClient(1, "../configs/config5_4.txt", "127.0.0.1", 9560);
-        AppClient client2 = new AppClient(2, "../configs/config5_4.txt", "127.0.0.1", 9561);
+        AppClient client1 = new AppClient(1, "../configs/config5_4.txt", "127.0.0.1", 9560, 1);
+        AppClient client2 = new AppClient(2, "../configs/config5_4.txt", "127.0.0.1", 9561, 1);
 
 
         //client1.submitValue(valueToDecide1);

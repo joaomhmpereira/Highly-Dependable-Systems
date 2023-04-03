@@ -17,6 +17,10 @@ public class TransactionBlock implements Serializable {
     public void addTransaction(TransactionMessage transaction) {
         _transactions.add(transaction);
     }
+
+    public List<TransactionMessage> getTransactions() {
+        return _transactions;
+    }
     
     public boolean containsTransaction(TransactionMessage transaction){
         return _transactions.contains(transaction);

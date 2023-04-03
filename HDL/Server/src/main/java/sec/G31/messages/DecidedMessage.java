@@ -7,24 +7,23 @@ public class DecidedMessage implements Serializable {
     private int _balance;
     private String _value;
     private int _senderId;
-    private int _instance;
+    private int _id;
     private String _cipheredDigest;
     private int _nonce;
 
-    public DecidedMessage(String type, String value, int senderId, int instance, int nonce) {
+    public DecidedMessage(String type, String value, int senderId, int id, int nonce) {
         _type = type;
         _senderId = senderId;
         _value = value;
-        _instance = instance;
+        _id = id;
         _nonce = nonce;
-        _balance = -1;
     }
 
     public DecidedMessage(String type, int balance, int senderId, int nonce) {
         _type = type;
         _senderId = senderId;
         _balance = balance;
-        _instance = -1;
+        _id = -1;
         _nonce = nonce;
         _value = "";
     }
@@ -41,8 +40,12 @@ public class DecidedMessage implements Serializable {
         return _nonce;
     }
 
-    public int getInstance() {
-        return _instance;
+    public int getId() {
+        return _id;
+    }
+
+    public void setId(int id) {
+        _id = id;
     }
 
     public String getValue() {
@@ -62,7 +65,7 @@ public class DecidedMessage implements Serializable {
     }
 
     public String stringForDigest(){
-        return _value + "." + _senderId + "." + _instance + "." + _type + "." + _balance + "." + _nonce;
+        return _value + "." + _senderId + "." + _id + "." + _type + "." + _balance + "." + _nonce;
     }
 
     @Override
@@ -72,7 +75,12 @@ public class DecidedMessage implements Serializable {
         }
         DecidedMessage other = (DecidedMessage) obj;
         return other.getValue().equals(_value) && other.getSenderId() == _senderId 
-            && other.getInstance() == _instance && other.getType().equals(_type) 
+            && other.getId() == _id && other.getType().equals(_type) 
             && other.getBalance() == _balance && other.getNonce() == _nonce;
+    }
+
+    @Override
+    public String toString() {
+        return _type + "." + _value + "." + _id; // not sure about this one
     }
 }

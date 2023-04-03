@@ -18,13 +18,13 @@ public class BroadcastManager
     private PerfectAuthLink _PAChannel; // the channel that it uses for communication
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private IBFT _ibft;
-    private int _consensusInstance;
+    private int _operationId;
 
     public BroadcastManager(IBFT ibft, Server server, Hashtable<Integer, Integer> neighbours){
         _ibft = ibft;
         _broadcastNeighbors = neighbours;
         _PAChannel = new PerfectAuthLink(this, server, server.getAddress(), server.getPort(), _broadcastNeighbors);
-        _consensusInstance = 1;
+        _operationId = 0;
     } 
 
 
@@ -94,6 +94,7 @@ public class BroadcastManager
     public void sendDecide(DecidedMessage msg, int destPort){
         try {
             InetAddress destAddr = InetAddress.getByName("127.0.0.1");
+            msg.setId(_operationId++);
             _PAChannel.sendDecide(destAddr, destPort, msg);
         } catch (UnknownHostException e) {
             e.printStackTrace();

@@ -21,60 +21,27 @@ public class BroadcastManagerClient
     private Hashtable<String, ArrayList<Integer>> _decidedQuorum; // <value, list of guys that sent us decided>
     private int _lastDecidedInstance;
     private List<Integer> _decidedInstances;
+    private int _F;
+    private boolean _first = true; // to stop race condition, maybe
 
 
-    public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId){
+    public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId, int numFaulties){
         _PAChannel = new PerfectAuthClient(this, address, port, servers);
         _broadcastServers = servers;
         _clientId = clientId;
         _decidedQuorum = new Hashtable<String, ArrayList<Integer>>();
-        _lastDecidedInstance = 1; // last instance that we know decided
+        _lastDecidedInstance = 0; // last instance that we know decided
         _decidedInstances = new ArrayList<Integer>(); 
+        _F = numFaulties;
     }
     
-    public void receivedMessage(DecidedMessage msg){
-        System.out.println("[CLIENT " + _clientId + "] Value decided for instance " + msg.getInstance() + " -> " + msg.getValue());
-    }
-
-    /**
-     * The behaviour after receiving a decided message from a server
-     * 
-     * IMPORTANT: 
-     *  we will not process every decided from an older instance 
-     */
-    public void receivedDecidedIDK(DecidedMessage msg){
-        // drop if older
-        if(msg.getInstance() < _lastDecidedInstance || _decidedInstances.contains(msg.getInstance())){
-            return;
-        }
-        // we haven't decided and we don't have this msg 
-        if(msg.getInstance() >= _lastDecidedInstance){
-            String value = msg.getValue();
-            //update the quorum or insert new entry if it isn't there
-            // if still no one had sent prepare
-            synchronized(this){
-                if (!_decidedQuorum.containsKey(value)) {
-                    ArrayList<Integer> list = new ArrayList<Integer>();
-                    list.add(msg.getSenderId());
-                    _decidedQuorum.put(value, list);
-                } else {
-                    ArrayList<Integer> list = _decidedQuorum.get(value);
-                    if(!list.contains(msg.getSenderId())){
-                        list.add(msg.getSenderId());
-                        _decidedQuorum.put(value, list);
-                    }
-                }
-            }
-            // only decide if there is a quorum
-            // TODO: what will be the size of the quorum
-            if(_decidedQuorum.get(value).size() >= 3){ 
-                //System.out.println("[CLIENT " + _clientId + "] Received Decided Quorum");
-                _lastDecidedInstance = msg.getInstance();
-                _decidedInstances.add(msg.getInstance());
-                this.receivedMessage(msg); 
-            }
-        }
-    }
+    /*public void receivedDecidedTransfer(DecidedMessage msg){
+        if (msg.getValue().equals("Success")) {
+            System.out.println("[CLIENT " + _clientId + "] Sucessfull Transfer");
+        } else {
+            System.out.println("[CLIENT " + _clientId + "] Tranfer failed");
+        }    
+    }*/
 
     public void receivedDecidedCreate(DecidedMessage msg){
         if (msg.getValue().equals("Success")) {
@@ -99,22 +66,69 @@ public class BroadcastManagerClient
         }
     }
     
+
+    /**
+     * The behaviour after receiving a decided message from a server
+     * 
+     * IMPORTANT: 
+     *  we will not process every decided from an older instance 
+     */
     public void receivedDecided(DecidedMessage msg){
-        switch (msg.getType()) {
-            case "BALANCE":
-                this.receivedDecidedBalance(msg);
-                break;
-            case "TRANSFER":
-                this.receivedDecidedIDK(msg);
-                break;
-            case "CREATE":
-                this.receivedDecidedCreate(msg);
-                break;
-            case "TRANSACTION":
-                this.receivedDecidedTransaction(msg);
-                break;
-            default:
-                break;
+        //BATOTA
+        // msg.setInstance(_lastDecidedInstance + 1);
+
+        System.out.println("Decided sent to client " + _clientId);
+
+        // drop if older
+        if(msg.getId() < _lastDecidedInstance 
+                || _decidedInstances.contains(msg.getId())){
+            System.out.println("Before - msg: " + msg.getId() + " last: " + _lastDecidedInstance);
+            return;
+        }
+
+        System.out.println("After - msg: " + msg.getId() + " last: " + _lastDecidedInstance);
+        // we haven't decided and we don't have this msg 
+        if(msg.getId() >= _lastDecidedInstance){
+            String impStuff = msg.toString();
+            //update the quorum or insert new entry if it isn't there
+            // if still no one had sent prepare
+            synchronized(this){
+                if (!_decidedQuorum.containsKey(impStuff)) {
+                    ArrayList<Integer> list = new ArrayList<Integer>();
+                    list.add(msg.getSenderId());
+                    _decidedQuorum.put(impStuff, list);
+                } else {
+                    ArrayList<Integer> list = _decidedQuorum.get(impStuff);
+                    if(!list.contains(msg.getSenderId())){
+                        list.add(msg.getSenderId());
+                        _decidedQuorum.put(impStuff, list);
+                    }
+                }
+            }
+
+            System.out.println("first: " + _first);
+            // only decide if there is a quorum
+            if(_first && _decidedQuorum.get(impStuff).size() >= 2*_F+1){
+                //System.out.println("[CLIENT " + _clientId + "] Received Decided Quorum");
+                _first = false;
+                _lastDecidedInstance = msg.getId();
+                _decidedInstances.add(_lastDecidedInstance);
+                
+                switch (msg.getType()) {
+                    case "BALANCE":
+                        this.receivedDecidedBalance(msg);
+                        break;
+                    case "CREATE":
+                        this.receivedDecidedCreate(msg);
+                        break;
+                    case "TRANSACTION":
+                        this.receivedDecidedTransaction(msg);
+                        break;
+                    default:
+                        break;
+                }
+                _first = true;
+            }
         }
     }
 

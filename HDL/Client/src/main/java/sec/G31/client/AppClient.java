@@ -19,16 +19,18 @@ public class AppClient
     private int _nonceCounter;
     private int _clientId;
     private int _port;
+    private int _F;
     BroadcastManagerClient _broadcastManager;
 
-    public AppClient(int clientId, String configFile, String address, int port) {
+    public AppClient(int clientId, String configFile, String address, int port, int numFaulties) {
         _nonceCounter = 0;
         _clientId = clientId;
         _port = port;
+        _F = numFaulties;
         try {
             Hashtable<Integer, Integer> servers = readFromFile(configFile);
             InetAddress addr = InetAddress.getByName(address);
-            _broadcastManager = new BroadcastManagerClient(addr, port, servers, clientId);
+            _broadcastManager = new BroadcastManagerClient(addr, port, servers, clientId, _F);
             
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,8 +61,8 @@ public class AppClient
     public static void main( String[] args )
     {
         // Check if the number of arguments is correct
-        if (args.length != 4) {
-            System.out.println("Usage: java App <clientId> <address> <port> <configFile>");
+        if (args.length != 5) {
+            System.out.println("Usage: java App <clientId> <address> <port> <numFaulties> <configFile>");
             System.exit(1);
         }
         
@@ -68,7 +70,8 @@ public class AppClient
         int _clientId = Integer.parseInt(args[0]);
         final String _address = args[1];
         final int _port = Integer.parseInt(args[2]);
-        final String config = args[3];
+        final int _F = Integer.parseInt(args[3]);
+        final String config = args[4];
         Hashtable<Integer, Integer> _servers;
         //int _clientPort;
         System.out.println("=== Hello Client " + _clientId + " ===");
@@ -82,7 +85,7 @@ public class AppClient
             }
 
             InetAddress addr = InetAddress.getByName(_address);
-            BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId);
+            BroadcastManagerClient _broadcastManager = new BroadcastManagerClient(addr, _port, _servers, _clientId, _F);
             
             Scanner inputScanner = new Scanner(System.in);
             System.out.print("Available commands:\n [1] CREATE - to create an new account.\n [2] BALANCE - to check an accounts balance\n [3] TRANSFER - to make a transfer.\n [4] QUIT - to quit.\nPlease enter the number of the command: ");

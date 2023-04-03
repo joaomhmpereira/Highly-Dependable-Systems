@@ -63,7 +63,7 @@ public class IBFT
      */
     public IBFT(Server server, int faultyNodes){
         _server = server;
-        _instance = 1;
+        _instance = 0;
         _currentRound = 0;
         _preparedRound = 0;
         //_preparedValue = "";
@@ -80,6 +80,20 @@ public class IBFT
         _nonceCounter = 0;
     }
 
+
+
+
+    /**
+     * 
+     * SERVER OPERATIONS 
+     * 
+     * these operations are the one that the client may call from the API
+     * 
+     */
+
+
+
+
     /**
      * Create a new account (if it doesn't already exist) and add it to the list of accounts
      * @param publicKey
@@ -90,18 +104,14 @@ public class IBFT
             Account newAccount = new Account(publicKey, 150);
             _accounts.put(publicKey, newAccount);
             System.out.println("[SERVER " + _server.getId() + "]: Account created successfully. Client: " + clientPort);
-            if (_server.isLeader(_currentRound)){
-                DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), -1, _nonceCounter);
-                _broadcast.sendDecide(decidedMessage, clientPort);
-                _nonceCounter++;
-            } // TODO sending only if we're leader
+            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), _instance, _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;
         } else {
             System.out.println("Account already exists");
-            if (_server.isLeader(_currentRound)){
-                DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), -1, _nonceCounter);
-                _broadcast.sendDecide(decidedMessage, clientPort);
-                _nonceCounter++;
-            }   
+            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), _instance, _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;   
         }
     }
 
@@ -110,58 +120,80 @@ public class IBFT
             synchronized (this){    // necessario??
                 Account account = _accounts.get(publicKey);
                 System.out.println("[SERVER " + _server.getId() + "]: Balance checked successfully. Client: " + clientPort);
-                if (_server.isLeader(_currentRound)){
-                    DecidedMessage decidedMessage = new DecidedMessage("BALANCE", account.getBalance(), _server.getId(), _nonceCounter);
-                    _broadcast.sendDecide(decidedMessage, clientPort);
-                    _nonceCounter++;
-                } //TODO sending only if we're leader
-            }
-        } else {
-            if (_server.isLeader(_currentRound)) {
-                DecidedMessage decidedMessage = new DecidedMessage("BALANCE", -1, _server.getId(), _nonceCounter);
+                DecidedMessage decidedMessage = new DecidedMessage("BALANCE", account.getBalance(), _server.getId(), _nonceCounter);
                 _broadcast.sendDecide(decidedMessage, clientPort);
                 _nonceCounter++;
             }
+        } else {
+            DecidedMessage decidedMessage = new DecidedMessage("BALANCE", -1, _server.getId(), _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;
             System.out.println("Account doesn't exist");
         }
     }
 
     public void makeTransaction(TransactionMessage msg, int clientPort){
-        if (_accounts.containsKey(msg.getSource()) && _accounts.containsKey(msg.getDestination())){
-            synchronized (this) {
-                Account source = _accounts.get(msg.getSource());
-                Account destination = _accounts.get(msg.getDestination());
-                if (source.subtractBalance(msg.getAmount())){
-                    destination.addBalance(msg.getAmount());
-                    if (_server.isLeader(_currentRound)){
-                        DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Success", _server.getId(), -1, _nonceCounter);
-                        _broadcast.sendDecide(decidedMessage, clientPort);
-                        _nonceCounter++;
-                    }
-                    _currentTransactionBlock.addTransaction(msg);
-                    if (_currentTransactionBlock.isCompleted()){
-                        this.start(_currentTransactionBlock, clientPort, clientPort);
-                    }
-                } else {
-                    System.out.println("Not enough balance");
-                    if (_server.isLeader(_currentRound)){
-                        DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: Not enough balance.", _server.getId(), -1, _nonceCounter);
-                        _broadcast.sendDecide(decidedMessage, clientPort);
-                        _nonceCounter++;
-                    }
-                }
-            }
-            
-        } else {
+        // TODO: fazer esta parte
+        if(_currentTransactionBlock.isCompleted()){
+            // wait for new one
+        }
+        
+        // if the accounts don't exist, send error message 
+        if(!_accounts.containsKey(msg.getSource()) || !_accounts.containsKey(msg.getDestination())){
             System.out.println("one of the accounts doesn't exist");
-            if (_server.isLeader(_currentRound)){
-                DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: One of the accounts doesn't exist.", _server.getId(), -1, _nonceCounter);
-                _broadcast.sendDecide(decidedMessage, clientPort);
-                _nonceCounter++;
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: One of the accounts doesn't exist.", _server.getId(), -1, _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;
+            return; // leave
+        }
+
+        boolean notEnoughMoney = false;
+
+        // this has to be in a atomic section 
+        synchronized(this){
+            Account source = _accounts.get(msg.getSource());
+            Account destination = _accounts.get(msg.getDestination());
+
+            // not enough money, send error message 
+            if(source.canSubtractBalanceBlockchain(msg.getAmount())){
+                // update acounts 
+                source.subtractTempBalance(msg.getAmount());
+                destination.addTempBalance(msg.getAmount());
+                msg.setClientPort(clientPort);
+
+                // add transaction to block 
+                _currentTransactionBlock.addTransaction(msg);
+
+                // if block full, perform consensus
+                if (_currentTransactionBlock.isCompleted())
+                    this.start(_currentTransactionBlock, clientPort, clientPort);
+            }else{
+                notEnoughMoney = true;
             }
+        }
+
+        if(notEnoughMoney){
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: Not enough balance.", _server.getId(), -1, _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;
         }
     }
     
+
+
+
+    /**
+     * 
+     *  IBFT ALGORITHM implementation
+     * 
+     *  these operations refer to putting a block of transactions into the blockchain
+     * 
+     */
+
+
+
+
+
     public void cleanup(){
         _currentRound = 0;
         _preparedRound = 0;
@@ -223,26 +255,46 @@ public class IBFT
      */
     public void receivedCommitQuorum(Message msg){
         // DECIDE -> dar append da string à blockchain
-        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Value -> " + msg.getBlock());
+        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED =====      Block hash code -> " + msg.getBlock().hashCode());
 
-        // send decided message to client
-        //DecidedMessage decideMessage = new DecidedMessage("decided", _server.getId(), _instance, _nonceCounter);
-        //_broadcast.sendDecide(decideMessage, _clientPort);
-        //_nonceCounter++;
-        //if (_currentTransactionBlock.isCompleted()){ // if the block is completed -> add it to the blockchain and create new one
-        //    _server.addToBlockchain(_currentTransactionBlock);
-        //    _currentTransactionBlock = new TransactionBlock();
-        //    _currentTransactionBlock.addTransaction(msg.getValue());
-        //} else {
-        //    _currentTransactionBlock.addTransaction(msg.getValue());
-        //}
-        //_server.addToBlockchain(msg.getValue());
+        List<TransactionMessage> transactions = msg.getBlock().getTransactions();
+        
+        // FIXME: not sure if needs to be synchronized
+        synchronized(this)
+        {
+            // perform the transaction in order 
+            for(int i=0; i<transactions.size(); i++){
+                // get transaction
+                TransactionMessage transactionMessage = transactions.get(i);
+
+                // get source and dest accounts
+                PublicKey pubKeySource = transactionMessage.getSource();
+                PublicKey pubKeyDest = transactionMessage.getDestination();
+                Account source = _accounts.get(pubKeySource);
+                Account dest = _accounts.get(pubKeyDest);
+
+                // perform the transaction
+                int amount = transactionMessage.getAmount();
+                source.subtractBalance(amount);
+                dest.addBalance(amount);
+            }
+
+            // insert the block in the blockchain
+            _server.getBlockchain().addTransactionBlock(_currentTransactionBlock);
+        }
+
+        // sending the confirmations (not atomically)
+        for(int i=0; i<transactions.size(); i++){
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Transaction done", _server.getId(), -1, _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, transactions.get(i).getClientPort());
+            _nonceCounter++;
+        }
+
+        // update instance number of consensus 
         _instance += 1;
 
+        // clean this up for the next consensus 
         this.cleanup();
-        //synchronized(_broadcast){
-        //    _broadcast.notifyAll();
-        //}
     }
 
 
@@ -258,8 +310,7 @@ public class IBFT
             // set timer to running
             //_sentPrepare = true;
             _receivedMessages.add(msg);
-            System.out.println(" [SERVER " + _server.getId() + "] received pre-prepare from leader");
-            System.out.println(_inputValue.equals(msg.getBlock()));
+            System.out.println(" [SERVER " + _server.getId() + "] received pre-prepare from leader, value equals mine?: " + _inputValue.equals(msg.getBlock()));
             this.sendPrepares(_instance, _currentRound, msg.getBlock());
         }
     }
@@ -281,28 +332,34 @@ public class IBFT
             //update the quorum or insert new entry if it isn't there
             // if still no one had sent prepare
 
+            boolean found = false;
+
             synchronized(this){
-                for (TransactionBlock block : _prepareQuorum.keySet()){
-                    if (value.equals(block)){
-                        System.out.println("Codes, 1: " + value.hashCode() + " 2 (in the quorum): " + block.hashCode());
-                        System.out.println("FOUND ONE");
+                while(true){
+                    for (TransactionBlock block : _prepareQuorum.keySet()){
+                        if (value.equals(block)){ // if the value is already in the quorum
+                            ArrayList<Integer> list = _prepareQuorum.get(block);
+                            if(!list.contains(msg.getSenderId())){
+                                list.add(msg.getSenderId());
+                                _prepareQuorum.put(block, list);
+                            }
+                            value = block;
+                            found = true;
+                            break;
+                        }
                     }
-                }
-                if (!_prepareQuorum.containsKey(value)) {
-                    System.out.println("Doesn't contain key, adding " + value.hashCode());
-                    ArrayList<Integer> list = new ArrayList<Integer>();
-                    list.add(msg.getSenderId());
-                    _prepareQuorum.put(value, list);
-                } else {
-                    ArrayList<Integer> list = _prepareQuorum.get(value);
-                    if(!list.contains(msg.getSenderId())){
+                    if (found){
+                        break;
+                    } else { // if the value is not in the quorum -> add it
+                        ArrayList<Integer> list = new ArrayList<Integer>();
                         list.add(msg.getSenderId());
                         _prepareQuorum.put(value, list);
-                    }
+                        break;
+                    } 
                 }
             }
 
-            System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value.hashCode()  + " -> " + _prepareQuorum.get(value).size());
+            //System.out.println("[SERVER " + _server.getId() + "] Prepare quorum size for value: " + value.hashCode()  + " -> " + _prepareQuorum.get(value).size());
             
             // only send one commit if we have already quorum
             if(_prepareQuorum.get(value).size() >= 2*_F+1 && !_sentCommit && !_decided){ // in case of quorum
@@ -327,18 +384,30 @@ public class IBFT
             _receivedMessages.add(msg);
             TransactionBlock value = msg.getBlock();
             
+            boolean found = false;
+
             synchronized(this){
-                // if still no one had sent commit
-                if (!_commitQuorum.containsKey(value)) {
-                    ArrayList<Integer> list = new ArrayList<Integer>();
-                    list.add(msg.getSenderId());
-                    _commitQuorum.put(value, list);
-                } else {
-                    ArrayList<Integer> list = _commitQuorum.get(value);
-                    if(!list.contains(msg.getSenderId())){
+                while(true){
+                    for (TransactionBlock block : _commitQuorum.keySet()){
+                        if (value.equals(block)){ // if the value is already in the quorum
+                            ArrayList<Integer> list = _commitQuorum.get(block);
+                            if(!list.contains(msg.getSenderId())){
+                                list.add(msg.getSenderId());
+                                _commitQuorum.put(block, list);
+                            }
+                            value = block;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found){
+                        break;
+                    } else { // if the value is not in the quorum -> add it
+                        ArrayList<Integer> list = new ArrayList<Integer>();
                         list.add(msg.getSenderId());
                         _commitQuorum.put(value, list);
-                    }
+                        break;
+                    } 
                 }
             }
             

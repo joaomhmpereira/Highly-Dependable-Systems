@@ -37,10 +37,6 @@ public class PerfectAuthClient {
     }
 
     public void sendMessage(InetAddress destAddress, int destPort, Message msg) {
-        if (msg.getType().equals("CREATE")){ //TODO assinar ou nao?
-            _stubChannel.sendMessage(destAddress, destPort, msg);
-            return;
-        }
         try {
             String serverKeyPath = _keyPath + "clients/"  + _broadcastManager.getClientId() + "/private_key.der";
             PrivateKey key = readPrivateKey(serverKeyPath);

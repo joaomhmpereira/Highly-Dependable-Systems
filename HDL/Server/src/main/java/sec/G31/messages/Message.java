@@ -109,11 +109,11 @@ public class Message implements Serializable {
     }
 
     public String stringForDigest() {
-        if (_publicKey != null)
+        if (_publicKey != null) // check balance/create account message
             return _type + "." + _senderId + "." + _senderPort + "." + _nonce + ".";
-        else if (this.isBlockSet())
+        else if (this.isBlockSet()) // transaction block message
             return _type + "." + _block.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
-        else 
+        else // transaction message
             return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
     }
 

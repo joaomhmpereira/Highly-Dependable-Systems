@@ -9,6 +9,7 @@ public class TransactionMessage implements Serializable {
     private PublicKey _source;
     private PublicKey _destination;
     private int _amount;
+    private int _clientPort; // to know to which client to send after transaction commited 
 
     public TransactionMessage(PublicKey source, PublicKey destination, int amount) {
         _source = source;
@@ -26,6 +27,14 @@ public class TransactionMessage implements Serializable {
 
     public int getAmount() {
         return _amount;
+    }
+
+    public void setClientPort(int clientPort){
+        _clientPort = clientPort;
+    }
+
+    public int getClientPort(){
+        return _clientPort;
     }
 
     @Override
@@ -50,6 +59,6 @@ public class TransactionMessage implements Serializable {
             return false;
         }
         final TransactionMessage other = (TransactionMessage) obj;
-        return this._destination.equals(other._destination) && this._source.equals(other._source) && this._amount == other._amount;
+        return this._destination.equals(other._destination) && this._source.equals(other._source) && this._amount == other._amount && this._clientPort == other._clientPort;
     }
 }

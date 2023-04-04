@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class DecidedMessage implements Serializable {
     private String _type;
-    private int _balance;
+    private float _balance;
     private String _value;
     private int _senderId;
     private int _id;
@@ -19,7 +19,7 @@ public class DecidedMessage implements Serializable {
         _balance = -1;
     }
 
-    public DecidedMessage(String type, int balance, int senderId, int nonce) {
+    public DecidedMessage(String type, float balance, int senderId, int nonce) {
         _type = type;
         _senderId = senderId;
         _balance = balance;
@@ -28,7 +28,7 @@ public class DecidedMessage implements Serializable {
         _value = "";
     }
 
-    public int getBalance() {
+    public float getBalance() {
         return _balance;
     }
 

@@ -6,6 +6,8 @@ import sec.G31.utils.TransactionBlock;
 import java.net.*;
 import java.util.Hashtable;
 
+import java.security.PublicKey;
+
 public class Server
 {   
     private final static Logger LOGGER = Logger.getLogger(Server.class.getName());
@@ -19,12 +21,12 @@ public class Server
     private Hashtable<Integer, Integer> _myNeighbors = new Hashtable<Integer, Integer>(); // <server id, port>
 
     public Server(int serverId,InetAddress serverAddress, int serverPort,
-                 String faultType, String leaderFlag, int numFaulty){
+                 String faultType, String leaderFlag, int numFaulty, PublicKey leaderPubKey){
         _id = serverId;
         _address = serverAddress;
         _port = serverPort;
         //_channel = new PerfectAuthChannel(this, _address, _port);
-        _ibft = new IBFT(this, numFaulty);
+        _ibft = new IBFT(this, numFaulty, leaderPubKey);
         _faultType = faultType;
         _leaderFlag = leaderFlag;
         _blockchain = new Blockchain();

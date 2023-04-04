@@ -25,6 +25,8 @@ public class IBFT
 
     private Server _server;
     private int _leader; // algorithm 3 and 4 will change this
+    private float _fee = 0.05f;
+    private Account _leaderAccount;
     
     // algorithm variables
     private BroadcastManager _broadcast; // broadcast 
@@ -61,7 +63,7 @@ public class IBFT
      * The constructor
      * for now the servers will know who is leader
      */
-    public IBFT(Server server, int faultyNodes){
+    public IBFT(Server server, int faultyNodes, PublicKey leaderPubKey){
         _server = server;
         _instance = 0;
         _currentRound = 0;
@@ -78,6 +80,13 @@ public class IBFT
         _currentTransactionBlock = new TransactionBlock();
         _accounts = new Hashtable<PublicKey, Account>();
         _nonceCounter = 0;
+        createLeaderAccount(leaderPubKey);
+    }
+
+    private void createLeaderAccount(PublicKey leaderPubKey) {
+        _leaderAccount = new Account(leaderPubKey, 150.0f);
+        _accounts.put(leaderPubKey, _leaderAccount);
+        System.out.println("[Server "+ _server.getId() +"] created Leader Account");
     }
 
     /**
@@ -95,7 +104,7 @@ public class IBFT
     public void createAccount(PublicKey publicKey, int clientPort){
         if (!_accounts.containsKey(publicKey)){
             // initial balance fixed value > 0
-            Account newAccount = new Account(publicKey, 150);
+            Account newAccount = new Account(publicKey, 150.0f);
             _accounts.put(publicKey, newAccount);
             System.out.println("[SERVER " + _server.getId() + "]: Account created successfully. Client: " + clientPort);
             DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), _nonceCounter);
@@ -147,12 +156,13 @@ public class IBFT
         synchronized(this){
             Account source = _accounts.get(msg.getSource());
             Account destination = _accounts.get(msg.getDestination());
+            float ammount = msg.getAmount();
 
             // not enough money, send error message 
-            if(source.canSubtractBalanceBlockchain(msg.getAmount())){
+            if(source.canSubtractBalanceBlockchain(ammount)){
                 // update acounts 
-                source.subtractTempBalance(msg.getAmount());
-                destination.addTempBalance(msg.getAmount());
+                source.subtractTempBalance(ammount);
+                destination.addTempBalance(ammount);
                 msg.setClientPort(clientPort);
 
                 // add transaction to block 
@@ -216,7 +226,7 @@ public class IBFT
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()){
-            TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20);
+            TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20.0f);
             TransactionBlock byzantineBlock = new TransactionBlock();
             byzantineBlock.addTransaction(byzantineMessage);
             prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineBlock, 1, _server.getPort());
@@ -261,9 +271,14 @@ public class IBFT
                 Account dest = _accounts.get(pubKeyDest);
 
                 // perform the transaction
-                int amount = transactionMessage.getAmount();
+                float amount = transactionMessage.getAmount();
                 source.subtractBalance(amount);
                 dest.addBalance(amount);
+
+                // perform the transaction fee
+                source.subtractBalance(amount*_fee);
+                _leaderAccount.subtractBalance(amount*_fee);
+                System.out.println("[Server "+ _server.getId() +"] Leader Account - new bal: " + _leaderAccount.getBalance());
             }
 
             // insert the block in the blockchain

@@ -8,10 +8,10 @@ public class TransactionMessage implements Serializable {
 
     private PublicKey _source;
     private PublicKey _destination;
-    private int _amount;
+    private float _amount;
     private int _clientPort; // to know to which client to send after transaction commited 
 
-    public TransactionMessage(PublicKey source, PublicKey destination, int amount) {
+    public TransactionMessage(PublicKey source, PublicKey destination, float amount) {
         _source = source;
         _destination = destination;
         _amount = amount;
@@ -25,7 +25,7 @@ public class TransactionMessage implements Serializable {
         return _destination;
     }
 
-    public int getAmount() {
+    public float getAmount() {
         return _amount;
     }
 

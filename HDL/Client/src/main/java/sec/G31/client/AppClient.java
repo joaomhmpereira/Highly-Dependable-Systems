@@ -109,7 +109,7 @@ public class AppClient
                     String destinationPath = inputScanner.nextLine();
                     PublicKey destination = readPublicKey(destinationPath);
                     System.out.print("Enter the amount: ");
-                    int amount = Integer.parseInt(inputScanner.nextLine());
+                    float amount = Float.parseFloat(inputScanner.nextLine());
                     TransactionMessage transaction = new TransactionMessage(source, destination, amount);
                     Message msg = new Message("TRANSACTION", transaction, _clientId, _port, _nonceCounter);
                     _broadcastManager.sendBroadcast(msg);
@@ -144,8 +144,8 @@ public class AppClient
         }
     }
     
-    public void submitValue(PublicKey source, PublicKey destination, int amout){
-        TransactionMessage transaction = new TransactionMessage(source, destination, amout);
+    public void submitValue(PublicKey source, PublicKey destination, float amount){
+        TransactionMessage transaction = new TransactionMessage(source, destination, amount);
         Message msg = new Message("START", transaction, _clientId, _port, _nonceCounter);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;

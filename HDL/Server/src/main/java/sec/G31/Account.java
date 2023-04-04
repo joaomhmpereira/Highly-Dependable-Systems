@@ -5,10 +5,10 @@ import java.security.PublicKey;
 public class Account {
 
     private PublicKey _publicKey;
-    private int _balance;
-    private int _tempBalance; // during the validation of a block the balance may be slightly different 
+    private float _balance;
+    private float _tempBalance; // during the validation of a block the balance may be slightly different 
 
-    public Account(PublicKey publicKey, int balance) {
+    public Account(PublicKey publicKey, float balance) {
         _publicKey = publicKey;
         _balance = balance;
         _tempBalance = balance;
@@ -18,35 +18,35 @@ public class Account {
         return _publicKey;
     }
 
-    public int getBalance() {
+    public float getBalance() {
         return _balance;
     }
 
-    public int getTempBalance(){
+    public float getTempBalance(){
         return _tempBalance;
     }
 
-    public void addBalance(int amount) {
+    public void addBalance(float amount) {
         _balance += amount;
     }
 
-    public void addTempBalance(int amount){
+    public void addTempBalance(float amount){
         _tempBalance += amount;
     }
 
-    public void subtractBalance(int amount) {
+    public void subtractBalance(float amount) {
         _balance -= amount;
     }   
 
-    public void subtractTempBalance(int amount){
+    public void subtractTempBalance(float amount){
         _tempBalance -= amount;
     }
 
-    public boolean canSubtractBalance(int amount){
+    public boolean canSubtractBalance(float amount){
         return _balance >= amount;
     }
 
-    public boolean canSubtractBalanceBlockchain(int amount){
+    public boolean canSubtractBalanceBlockchain(float amount){
         return _tempBalance >= amount;
     }
 

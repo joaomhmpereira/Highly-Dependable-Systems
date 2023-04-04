@@ -11,12 +11,12 @@ public class DecidedMessage implements Serializable {
     private String _cipheredDigest;
     private int _nonce;
 
-    public DecidedMessage(String type, String value, int senderId, int id, int nonce) {
+    public DecidedMessage(String type, String value, int senderId, int nonce) {
         _type = type;
         _senderId = senderId;
         _value = value;
-        _id = id;
         _nonce = nonce;
+        _balance = -1;
     }
 
     public DecidedMessage(String type, int balance, int senderId, int nonce) {

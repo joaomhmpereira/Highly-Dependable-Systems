@@ -113,13 +113,15 @@ public class PerfectAuthLink {
                 if (verifyMessage(msg)) {
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
-                } else {
-                    System.out.println("PAC:: message not verified");
                 }
             }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadPaddingException e1) { // decryption failed, keys don't match
+            if (msg.getType().equals("CREATE") || msg.getType().equals("BALANCE") || msg.getType().equals("TRANSACTION")) {
+                DecidedMessage decidedMessage = new DecidedMessage(msg.getType(), "Error: You don't have permission to perform this operation.", _server.getId(), _server.getIBFT().getNonceCounter());
+                _broadcastManager.sendDecide(decidedMessage, port);
+            }
+        } catch (Exception e2) {
+            e2.printStackTrace();
         }
     }
 

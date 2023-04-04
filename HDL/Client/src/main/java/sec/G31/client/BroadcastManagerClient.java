@@ -22,7 +22,7 @@ public class BroadcastManagerClient
     private int _lastDecidedInstance;
     private List<Integer> _decidedInstances;
     private int _F;
-    private boolean _first = true; // to stop race condition, maybe
+    private boolean _first; // to stop race condition, maybe
 
 
     public BroadcastManagerClient(InetAddress address, int port, Hashtable<Integer, Integer> servers, int clientId, int numFaulties){
@@ -33,21 +33,15 @@ public class BroadcastManagerClient
         _lastDecidedInstance = 0; // last instance that we know decided
         _decidedInstances = new ArrayList<Integer>(); 
         _F = numFaulties;
+        _first = true;
     }
     
-    /*public void receivedDecidedTransfer(DecidedMessage msg){
-        if (msg.getValue().equals("Success")) {
-            System.out.println("[CLIENT " + _clientId + "] Sucessfull Transfer");
-        } else {
-            System.out.println("[CLIENT " + _clientId + "] Tranfer failed");
-        }    
-    }*/
 
     public void receivedDecidedCreate(DecidedMessage msg){
         if (msg.getValue().equals("Success")) {
             System.out.println("[CLIENT " + _clientId + "] Account created sucessfully");
         } else {
-            System.out.println("[CLIENT " + _clientId + "] Account creation failed");
+            System.out.println("[CLIENT " + _clientId + "] " + msg.getValue());
         }
     }
 
@@ -55,7 +49,7 @@ public class BroadcastManagerClient
         if (msg.getBalance() != -1)
             System.out.println("[CLIENT " + _clientId + "] Balance: " + msg.getBalance());
         else 
-            System.out.println("[CLIENT " + _clientId + "] Balance request failed");
+            System.out.println("[CLIENT " + _clientId + "] " + msg.getValue());
     }
 
     public void receivedDecidedTransaction(DecidedMessage msg){
@@ -74,20 +68,12 @@ public class BroadcastManagerClient
      *  we will not process every decided from an older instance 
      */
     public void receivedDecided(DecidedMessage msg){
-        //BATOTA
-        // msg.setInstance(_lastDecidedInstance + 1);
-
-        System.out.println("Decided sent to client " + _clientId);
-
         // drop if older
         if(msg.getId() < _lastDecidedInstance 
                 || _decidedInstances.contains(msg.getId())){
-            System.out.println("Before - msg: " + msg.getId() + " last: " + _lastDecidedInstance);
             return;
         }
 
-        System.out.println("After - msg: " + msg.getId() + " last: " + _lastDecidedInstance);
-        // we haven't decided and we don't have this msg 
         if(msg.getId() >= _lastDecidedInstance){
             String impStuff = msg.toString();
             //update the quorum or insert new entry if it isn't there
@@ -106,10 +92,8 @@ public class BroadcastManagerClient
                 }
             }
 
-            System.out.println("first: " + _first);
             // only decide if there is a quorum
             if(_first && _decidedQuorum.get(impStuff).size() >= 2*_F+1){
-                //System.out.println("[CLIENT " + _clientId + "] Received Decided Quorum");
                 _first = false;
                 _lastDecidedInstance = msg.getId();
                 _decidedInstances.add(_lastDecidedInstance);
@@ -128,6 +112,7 @@ public class BroadcastManagerClient
                         break;
                 }
                 _first = true;
+                _decidedQuorum.remove(impStuff);
             }
         }
     }

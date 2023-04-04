@@ -102,13 +102,13 @@ public class AppClient
                  *  TRANSFER 
                  */
                 else if (newMessage.equals("3")){
-                    System.out.print("Enter the source public key:");
+                    System.out.print("Enter the source public key: ");
                     String sourcePath = inputScanner.nextLine();
                     PublicKey source = readPublicKey(sourcePath);
-                    System.out.print("Enter the destination public key:");
+                    System.out.print("Enter the destination public key: ");
                     String destinationPath = inputScanner.nextLine();
                     PublicKey destination = readPublicKey(destinationPath);
-                    System.out.print("Enter the amount:");
+                    System.out.print("Enter the amount: ");
                     int amount = Integer.parseInt(inputScanner.nextLine());
                     TransactionMessage transaction = new TransactionMessage(source, destination, amount);
                     Message msg = new Message("TRANSACTION", transaction, _clientId, _port, _nonceCounter);
@@ -118,7 +118,7 @@ public class AppClient
                  * CHECK BALANCE
                  */
                 else if (newMessage.equals("2")){
-                    System.out.print("Enter the public key:");
+                    System.out.print("Enter the public key: ");
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
                     Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
@@ -129,7 +129,7 @@ public class AppClient
                  * CREATE ACCOUNT
                  */
                 else if (newMessage.equals("1")){
-                    System.out.print("Enter the public key:");
+                    System.out.print("Enter the public key: ");
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
                     Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);

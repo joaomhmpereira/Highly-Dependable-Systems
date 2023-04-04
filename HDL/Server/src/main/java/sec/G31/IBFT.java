@@ -33,7 +33,7 @@ public class IBFT
     private int _preparedRound;
     private TransactionBlock _preparedValue;
     private TransactionBlock _inputValue;
-    private int _clientPort;
+    //private int _clientPort;
     //private boolean _sentPrepare;
     private boolean _sentCommit; 
     private boolean _decided;
@@ -80,19 +80,13 @@ public class IBFT
         _nonceCounter = 0;
     }
 
-
-
-
     /**
-     * 
-     * SERVER OPERATIONS 
+     * ===================================================================
+     *                      SERVER OPERATIONS 
      * 
      * these operations are the one that the client may call from the API
-     * 
+     * ===================================================================
      */
-
-
-
 
     /**
      * Create a new account (if it doesn't already exist) and add it to the list of accounts
@@ -104,12 +98,12 @@ public class IBFT
             Account newAccount = new Account(publicKey, 150);
             _accounts.put(publicKey, newAccount);
             System.out.println("[SERVER " + _server.getId() + "]: Account created successfully. Client: " + clientPort);
-            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), _instance, _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Success", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;
         } else {
             System.out.println("Account already exists");
-            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), _instance, _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account already exists.", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;   
         }
@@ -141,7 +135,7 @@ public class IBFT
         // if the accounts don't exist, send error message 
         if(!_accounts.containsKey(msg.getSource()) || !_accounts.containsKey(msg.getDestination())){
             System.out.println("one of the accounts doesn't exist");
-            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: One of the accounts doesn't exist.", _server.getId(), -1, _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: One of the accounts doesn't exist.", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;
             return; // leave
@@ -173,26 +167,19 @@ public class IBFT
         }
 
         if(notEnoughMoney){
-            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: Not enough balance.", _server.getId(), -1, _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Error: Not enough balance.", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;
         }
     }
     
-
-
-
     /**
-     * 
-     *  IBFT ALGORITHM implementation
+     * ==============================================================================
+     *                      IBFT ALGORITHM implementation
      * 
      *  these operations refer to putting a block of transactions into the blockchain
-     * 
+     * ==============================================================================
      */
-
-
-
-
 
     public void cleanup(){
         _currentRound = 0;
@@ -215,7 +202,7 @@ public class IBFT
         //System.out.println("IBFT:: started instance: " + instance + " value: " + value);
         _inputValue = value;
         _instance = instance;
-        _clientPort = clientPort;
+        //_clientPort = clientPort;
 
         if(_server.getId() == _leader){ // if it's the leader
             Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue, _server.getId(), _server.getPort());
@@ -285,7 +272,7 @@ public class IBFT
 
         // sending the confirmations (not atomically)
         for(int i=0; i<transactions.size(); i++){
-            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Transaction done", _server.getId(), -1, _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION", "Transaction done", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, transactions.get(i).getClientPort());
             _nonceCounter++;
         }
@@ -424,5 +411,11 @@ public class IBFT
 
     public int getConsensusInstance(){
         return _instance;
+    }
+
+    public int getNonceCounter(){
+        int nonce = _nonceCounter;
+        _nonceCounter++;
+        return nonce;
     }
 }

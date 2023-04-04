@@ -156,13 +156,13 @@ public class IBFT
         synchronized(this){
             Account source = _accounts.get(msg.getSource());
             Account destination = _accounts.get(msg.getDestination());
-            float ammount = msg.getAmount();
+            float amount = msg.getAmount();
 
             // not enough money, send error message 
-            if(source.canSubtractBalanceBlockchain(ammount + amount * _fee)){
+            if(source.canSubtractBalanceBlockchain(amount + amount * _fee)){
                 // update acounts 
-                source.subtractTempBalance(ammount);
-                destination.addTempBalance(ammount);
+                source.subtractTempBalance(amount);
+                destination.addTempBalance(amount);
                 msg.setClientPort(clientPort);
 
                 // add transaction to block 

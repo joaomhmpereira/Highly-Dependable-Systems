@@ -159,7 +159,7 @@ public class IBFT
             float ammount = msg.getAmount();
 
             // not enough money, send error message 
-            if(source.canSubtractBalanceBlockchain(ammount)){
+            if(source.canSubtractBalanceBlockchain(ammount + amount * _fee)){
                 // update acounts 
                 source.subtractTempBalance(ammount);
                 destination.addTempBalance(ammount);
@@ -277,7 +277,7 @@ public class IBFT
 
                 // perform the transaction fee
                 source.subtractBalance(amount*_fee);
-                _leaderAccount.subtractBalance(amount*_fee);
+                _leaderAccount.addBalance(amount*_fee);
                 System.out.println("[Server "+ _server.getId() +"] Leader Account - new bal: " + _leaderAccount.getBalance());
             }
 

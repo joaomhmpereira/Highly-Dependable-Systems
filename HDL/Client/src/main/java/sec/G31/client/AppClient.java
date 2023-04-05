@@ -144,9 +144,21 @@ public class AppClient
         }
     }
     
-    public void submitValue(PublicKey source, PublicKey destination, float amount){
+    public void submitTransaction(PublicKey source, PublicKey destination, float amount){
         TransactionMessage transaction = new TransactionMessage(source, destination, amount);
-        Message msg = new Message("START", transaction, _clientId, _port, _nonceCounter);
+        Message msg = new Message("TRANSACTION", transaction, _clientId, _port, _nonceCounter);
+        _broadcastManager.sendBroadcast(msg);
+        _nonceCounter++;
+    }
+
+    public void checkBalance(PublicKey publicKey){
+        Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
+        _broadcastManager.sendBroadcast(msg);
+        _nonceCounter++;
+    }
+
+    public void createAccount(PublicKey publicKey){
+        Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
     }

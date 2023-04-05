@@ -17,7 +17,7 @@ public class Message implements Serializable {
     private PublicKey _publicKey;
     private String _cipheredDigest;
 
-    // server -> server 
+    // server -> server
     public Message(String type, int instance, int round, TransactionBlock block, int senderId, int senderPort) {
         _type = type;
         _block = block;
@@ -30,7 +30,7 @@ public class Message implements Serializable {
         _value = null;
     }
 
-    // client -> server, a transaction message 
+    // client -> server, a transaction message
     public Message(String type, TransactionMessage value, int senderId, int senderPort, int nonce) {
         _type = type;
         _value = value;
@@ -64,7 +64,7 @@ public class Message implements Serializable {
         return _block;
     }
 
-    public boolean isBlockSet(){
+    public boolean isBlockSet() {
         return _block != null;
     }
 
@@ -84,7 +84,7 @@ public class Message implements Serializable {
         return _instance;
     }
 
-    public int getSenderPort(){
+    public int getSenderPort() {
         return _senderPort;
     }
 
@@ -112,14 +112,23 @@ public class Message implements Serializable {
         if (_publicKey != null) // check balance/create account message
             return _type + "." + _senderId + "." + _senderPort + "." + _nonce + ".";
         else if (this.isBlockSet()) // transaction block message
-            return _type + "." + _block.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
+            return _type + "." + _block.toString() + "." + _round + "." + _instance + "." + _senderId + "."
+                    + _senderPort + "." + _nonce;
         else // transaction message
-            return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "." + _senderPort + "." + _nonce;
+            return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "."
+                    + _senderPort + "." + _nonce;
     }
 
     @Override
     public String toString() {
-        return _type + " Value: " + _value + " Round: " + _round + " Instance: " + _instance + " Sender: " + _senderId + " Port: " + _senderPort + " Nonce: " + _nonce;
+        if (_publicKey != null) // check balance/create account message
+            return _type + "." + _senderId + "." + _senderPort + "." + _nonce + ".";
+        else if (this.isBlockSet()) // transaction block message
+            return _type + "." + _round + "." + _instance + "." + _senderId + "."
+                    + _senderPort + "." + _nonce;
+        else // transaction message
+            return _type + "." + _value.toString() + "." + _round + "." + _instance + "." + _senderId + "."
+                    + _senderPort + "." + _nonce;
     }
 
     @Override
@@ -128,21 +137,19 @@ public class Message implements Serializable {
             return false;
         }
         Message msg = (Message) obj;
-        if(_value !=  null){
+        if (_value != null) {
             return msg.getType().equals(_type) && msg.getValue().equals(_value)
-                && msg.getRound() == _round && msg.getInstance() == _instance 
-                && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort 
-                && msg.getNonce() == _nonce;
-        }
-        else if (this.isBlockSet()){
+                    && msg.getRound() == _round && msg.getInstance() == _instance
+                    && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort
+                    && msg.getNonce() == _nonce;
+        } else if (this.isBlockSet()) {
             return msg.getType().equals(_type) && msg.getBlock().equals(_block)
-                && msg.getRound() == _round && msg.getInstance() == _instance 
-                && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort 
-                && msg.getNonce() == _nonce;
-        }
-        else 
-            return msg.getType().equals(_type) && msg.getSenderId() == _senderId 
-                && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;
-        
+                    && msg.getRound() == _round && msg.getInstance() == _instance
+                    && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort
+                    && msg.getNonce() == _nonce;
+        } else
+            return msg.getType().equals(_type) && msg.getSenderId() == _senderId
+                    && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;
+
     }
 }

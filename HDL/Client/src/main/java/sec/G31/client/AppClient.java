@@ -121,9 +121,26 @@ public class AppClient
                     System.out.print("Enter the public key: ");
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
+                    System.out.print("Do you want to perform a weak (W) or strong (S) read? ");
+                    String readType = inputScanner.nextLine();
                     Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
                     _broadcastManager.sendBroadcast(msg);
                 }
+
+                /**
+                 * Para os weak reads:
+                 *  - O cliente contacta apenas um servidor
+                 *  - Temos de ter uma maneira de provar que aquele servidor tem um valor correto
+                 *  - Usar um conjunto de assinaturas
+                 *  - Periodicamente, fazer um consenso sobre o estado do sistema e nesse consenso recolhemos um conjunto de assinaturas
+                 *  - Quando é feito o weak read mandamos o valor e o conjunto de assinaturas para provar ao cliente que houve uma maioria
+                 * a concordar com aquele valor
+                 * 
+                 * Para os strong reads:
+                 *  - O cliente contacta todos os servidores
+                 *  - Os servidores esperam que o consenso acabe (se estiver a ocorrer um) e mandam os valores para o cliente
+                 *  - Os servidores atualizam o timestamp (numero do ultimo bloco/instancia lida)
+                 */
 
                 /**
                  * CREATE ACCOUNT

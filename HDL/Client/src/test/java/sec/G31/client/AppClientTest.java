@@ -202,11 +202,11 @@ public class AppClientTest {
         client1.createAccount(client1PublicKey);
         client2.createAccount(client2PublicKey);
 
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        //try {
+        //    Thread.sleep(200);
+        //} catch (InterruptedException e) {
+        //    e.printStackTrace();
+        //}
 
         client2.submitTransaction(client2PublicKey, client1PublicKey, 15.0f);
         client1.submitTransaction(client1PublicKey, client2PublicKey, 30.0f);
@@ -216,7 +216,7 @@ public class AppClientTest {
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

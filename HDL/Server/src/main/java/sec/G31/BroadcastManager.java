@@ -49,11 +49,11 @@ public class BroadcastManager {
             case "BALANCE":
                 _ibft.checkBalance(msg.getPublicKey(), clientPort);
                 break;
-            // case "W_BALANCE":
-            //     _ibft.checkBalance(msg.getPublicKey(), clientPort, 0);
-            //     break;
+            case "W_BALANCE":
+                _ibft.weakCheckBalance(msg.getPublicKey(), clientPort);
+                break;
             // case "S_BALANCE":
-            //     _ibft.checkBalance(msg.getPublicKey(), clientPort, 1);
+            //     _ibft.strongCheckBalance(msg.getPublicKey(), clientPort);
             //     break;
             case "TRANSACTION":
                 _ibft.makeTransaction(msg.getValue(), clientPort);

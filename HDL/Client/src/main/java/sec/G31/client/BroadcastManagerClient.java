@@ -37,7 +37,7 @@ public class BroadcastManagerClient
     }
     
 
-    public void receivedDecidedCreate(DecidedMessage msg){
+    public void printCreate(DecidedMessage msg){
         if (msg.getValue().equals("Success")) {
             System.out.println("[CLIENT " + _clientId + "] Account created sucessfully");
         } else {
@@ -45,14 +45,14 @@ public class BroadcastManagerClient
         }
     }
 
-    public void receivedDecidedBalance(DecidedMessage msg){
+    public void printBalance(DecidedMessage msg){
         if (msg.getBalance() != -1)
             System.out.println("[CLIENT " + _clientId + "] Balance: " + msg.getBalance());
         else 
             System.out.println("[CLIENT " + _clientId + "] " + msg.getValue());
     }
 
-    public void receivedDecidedTransaction(DecidedMessage msg){
+    public void printTransaction(DecidedMessage msg){
         if (msg.getValue().equals("Success")) {
             System.out.println("[CLIENT " + _clientId + "] Transaction sucessful");
         } else {
@@ -63,57 +63,83 @@ public class BroadcastManagerClient
 
     /**
      * The behaviour after receiving a decided message from a server
+     * that needs a quorum of the same message
      * 
      * IMPORTANT: 
-     *  we will not process every decided from an older instance 
+     *  we will not process every decided from an older instance
      */
-    public void receivedDecided(DecidedMessage msg){
-        // drop if older
-        if(msg.getId() < _lastDecidedInstance 
-                || _decidedInstances.contains(msg.getId())){
+    public void receivedForQuorum(DecidedMessage msg) {
+        if(msg.getId() < _lastDecidedInstance) {
             return;
         }
-
-        if(msg.getId() >= _lastDecidedInstance){
-            String impStuff = msg.toString();
-            //update the quorum or insert new entry if it isn't there
-            // if still no one had sent prepare
-            synchronized(this){
-                if (!_decidedQuorum.containsKey(impStuff)) {
-                    ArrayList<Integer> list = new ArrayList<Integer>();
+        String impStuff = msg.toString();
+        //update the quorum or insert new entry if it isn't there
+        // if still no one had sent prepare
+        synchronized(this){
+            if (!_decidedQuorum.containsKey(impStuff)) {
+                ArrayList<Integer> list = new ArrayList<Integer>();
+                list.add(msg.getSenderId());
+                _decidedQuorum.put(impStuff, list);
+            } else {
+                ArrayList<Integer> list = _decidedQuorum.get(impStuff);
+                if(!list.contains(msg.getSenderId())){
                     list.add(msg.getSenderId());
                     _decidedQuorum.put(impStuff, list);
-                } else {
-                    ArrayList<Integer> list = _decidedQuorum.get(impStuff);
-                    if(!list.contains(msg.getSenderId())){
-                        list.add(msg.getSenderId());
-                        _decidedQuorum.put(impStuff, list);
-                    }
                 }
             }
+        }
 
-            // only decide if there is a quorum
-            if(_first && _decidedQuorum.get(impStuff).size() >= 2*_F+1){
-                _first = false;
-                _lastDecidedInstance = msg.getId();
-                _decidedInstances.add(_lastDecidedInstance);
-                
-                switch (msg.getType()) {
-                    case "BALANCE":
-                        this.receivedDecidedBalance(msg);
-                        break;
-                    case "CREATE":
-                        this.receivedDecidedCreate(msg);
-                        break;
-                    case "TRANSACTION":
-                        this.receivedDecidedTransaction(msg);
-                        break;
-                    default:
-                        break;
-                }
-                _first = true;
-                _decidedQuorum.remove(impStuff);
-            }
+        // if(!_first || _decidedQuorum.get(impStuff).size() < 2*_F+1) {
+        if(_decidedQuorum.get(impStuff).size() < 2*_F+1) {
+            return;
+        }
+        // only decide if there is a quorum
+        // _first = false;
+        _lastDecidedInstance = msg.getId();
+        _decidedInstances.add(_lastDecidedInstance);
+        
+        switch (msg.getType()) {
+            case "CREATE":
+                this.printCreate(msg);
+                break;
+            case "TRANSACTION":
+                this.printTransaction(msg);
+                break;
+            default:
+                break;
+        }
+        _first = true;
+        _decidedQuorum.remove(impStuff);
+    }
+
+    public void receivedStrongBalance(DecidedMessage msg) {
+        
+    }
+
+    public void receivedWeakBalance(DecidedMessage msg) {
+        
+    }
+    public void receivedDecided(DecidedMessage msg) {
+        // drop if older
+        if(msg.getId() < _lastDecidedInstance 
+                || _decidedInstances.contains(msg.getId())) {
+            return;
+        }
+        
+        switch (msg.getType()) {
+            case "W_BALANCE":
+                this.receivedWeakBalance(msg);
+                break;
+            case "S_BALANCE":
+                this.receivedForQuorum(msg);
+            case "CREATE":
+                this.receivedForQuorum(msg);
+                break;
+            case "TRANSACTION":
+                this.receivedForQuorum(msg);
+                break;
+            default:
+                break;
         }
     }
 

@@ -43,7 +43,7 @@ public class AppClientTest {
         final TransactionMessage t1 = new TransactionMessage(client2PublicKey, client1PublicKey, 15.0f);
         final TransactionMessage t2 = new TransactionMessage(client1PublicKey, client2PublicKey, 30.0f);
 
-        final TransactionBlock block = new TransactionBlock();
+        final TransactionBlock block = new TransactionBlock("TRANSACTIONS");
         block.addTransaction(t1);
         block.addTransaction(t2);
         blockchain.addTransactionBlock(block);
@@ -91,7 +91,7 @@ public class AppClientTest {
         final TransactionMessage t1 = new TransactionMessage(client2PublicKey, client1PublicKey, 15.0f);
         final TransactionMessage t2 = new TransactionMessage(client1PublicKey, client2PublicKey, 30.0f);
 
-        final TransactionBlock block = new TransactionBlock();
+        final TransactionBlock block = new TransactionBlock("TRANSACTIONS");
         block.addTransaction(t1);
         block.addTransaction(t2);
         blockchain.addTransactionBlock(block);
@@ -180,8 +180,8 @@ public class AppClientTest {
         final TransactionMessage t3 = new TransactionMessage(client2PublicKey, client1PublicKey, 25.0f);
         final TransactionMessage t4 = new TransactionMessage(client1PublicKey, client2PublicKey, 5.0f);
 
-        final TransactionBlock block1 = new TransactionBlock();
-        final TransactionBlock block2 = new TransactionBlock();
+        final TransactionBlock block1 = new TransactionBlock("TRANSACTIONS");
+        final TransactionBlock block2 = new TransactionBlock("TRANSACTIONS");
         block1.addTransaction(t1);
         block1.addTransaction(t2);
         block2.addTransaction(t3);

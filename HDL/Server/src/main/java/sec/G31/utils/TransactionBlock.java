@@ -1,17 +1,31 @@
 package sec.G31.utils;
 
 import java.io.Serializable;
+import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
+import sec.G31.Account;
 import sec.G31.messages.TransactionMessage;
 
 public class TransactionBlock implements Serializable {
     
     List<TransactionMessage> _transactions;
+    Hashtable<PublicKey, Account> _accounts;
+    Hashtable<Integer, String> _signatures; 
+    
 
-    public TransactionBlock() {
-        _transactions = new ArrayList<TransactionMessage>(2);
+    public TransactionBlock(String type) {
+        if (type.equals("SNAPSHOT BLOCK")){
+            _accounts = new Hashtable<PublicKey, Account>();
+            _signatures = new Hashtable<Integer, String>();
+        }
+        else {
+            _transactions = new ArrayList<TransactionMessage>(2);
+            _accounts = null;
+            _signatures = null;
+        }
     }
 
     public void addTransaction(TransactionMessage transaction) {
@@ -20,6 +34,14 @@ public class TransactionBlock implements Serializable {
 
     public List<TransactionMessage> getTransactions() {
         return _transactions;
+    }
+
+    public void addAccounts(Hashtable<PublicKey, Account> accounts){
+        _accounts = accounts;
+    }
+
+    public void addSignature(int id, String signature){
+        _signatures.put(id, signature);
     }
     
     public boolean containsTransaction(TransactionMessage transaction){
@@ -49,6 +71,9 @@ public class TransactionBlock implements Serializable {
             return false;
         }
         final TransactionBlock other = (TransactionBlock) obj;
+        if (!_accounts.equals(null)){
+            return this._accounts.equals(other._accounts) && this._signatures.equals(other._signatures);
+        }
         return this._transactions.equals(other._transactions);
     }
 

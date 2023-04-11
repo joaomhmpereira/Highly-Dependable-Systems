@@ -122,9 +122,24 @@ public class AppClient
                     String publicKeyPath = inputScanner.nextLine();
                     PublicKey publicKey = readPublicKey(publicKeyPath);
                     System.out.print("Do you want to perform a weak (W) or strong (S) read? ");
-                    String readType = inputScanner.nextLine();
-                    Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
-                    _broadcastManager.sendBroadcast(msg);
+                    String readType = "";
+                    Message msg;
+                    while (!readType.equals("W") && !readType.equals("S"))
+                    {
+                        readType = inputScanner.nextLine();
+                        System.out.print("Please try again. (W) for weak; (S) for strong; (Q) to quit balance check");
+                        readType = inputScanner.nextLine();
+                        if (readType.equals("Q"))
+                            break;
+                        else if (readType.equals("W")) {
+                            msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+                            _broadcastManager.sendBroadcast(msg);
+                        }
+                        else if (readType.equals("S")) {
+                            msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+                            _broadcastManager.sendBroadcast(msg);                        
+                        }
+                    }
                 }
 
                 /**
@@ -132,14 +147,21 @@ public class AppClient
                  *  - O cliente contacta apenas um servidor
                  *  - Temos de ter uma maneira de provar que aquele servidor tem um valor correto
                  *  - Usar um conjunto de assinaturas
-                 *  - Periodicamente, fazer um consenso sobre o estado do sistema e nesse consenso recolhemos um conjunto de assinaturas
+                 *  - Periodicamente, fazer um consenso sobre o estado das contas e nesse consenso recolhemos um conjunto de assinaturas
                  *  - Quando é feito o weak read mandamos o valor e o conjunto de assinaturas para provar ao cliente que houve uma maioria
-                 * a concordar com aquele valor
-                 * 
+                 *      a concordar com aquele valor
+                 *  - após 3 rondas de consenso:
+                 *      - o líder espera que acabe o consensu dos blocos e começa o ibft para o estado das contas
+                 *      - um bacano quando recebe o estado das contas do líder vai aprovar e vai assinar e mandar para o líder.
+                 *      - o líder vai recolher as assinaturas e depois manda 
+                 *
                  * Para os strong reads:
                  *  - O cliente contacta todos os servidores
                  *  - Os servidores esperam que o consenso acabe (se estiver a ocorrer um) e mandam os valores para o cliente
                  *  - Os servidores atualizam o timestamp (numero do ultimo bloco/instancia lida)
+                 *  - o cliente deve esperar por 2f+1 gajos que mandem o valor 
+                 *  - o cliente deve esperar por f+1 gajos que mandem o mesmo valor para a mesma instancia.
+                 *      - à partida é impossível um valor do cliente ter sido 
                  */
 
                 /**
@@ -169,7 +191,7 @@ public class AppClient
     }
 
     public void checkBalance(PublicKey publicKey){
-        Message msg = new Message("BALANCE", _clientId, _port, _nonceCounter, publicKey);
+        Message msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
     }

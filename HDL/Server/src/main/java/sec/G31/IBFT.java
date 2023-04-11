@@ -48,9 +48,17 @@ public class IBFT {
     private final String PRE_PREPARE_MSG = "PRE-PREPARE";
     private final String COMMIT_MSG = "COMMIT";
 
+    // for transactions and blocks
     private TransactionBlock _currentTransactionBlock;
     private Hashtable<PublicKey, Account> _accounts;
     private List<TransactionMessage> _pendingTransactions;
+
+    // for the weak reads, every 3 blocks commited we start a consensus for status
+    private int _blocksCommited; 
+    private boolean _performingConsensus;
+
+    private Object _waitFunctionLock;
+
 
     /**
      * we only responde to messages of the same instance, we discard every message
@@ -76,11 +84,14 @@ public class IBFT {
         _decided = false;
         _sentCommit = false;
         _leader = 1; // just for this implementation
-        _currentTransactionBlock = new TransactionBlock();
+        _currentTransactionBlock = new TransactionBlock("TRANSACTIONS");
         _accounts = new Hashtable<PublicKey, Account>();
         _nonceCounter = 0;
         _pendingTransactions = new ArrayList<TransactionMessage>();
         createLeaderAccount(leaderPubKey);
+
+        _blocksCommited = 0;
+        _performingConsensus = false;
     }
 
     private void createLeaderAccount(PublicKey leaderPubKey) {
@@ -121,6 +132,18 @@ public class IBFT {
         }
     }
 
+    public void weakCheckBalance(PublicKey publicKey, int clientPort){
+        // there isn't one account with that public key no point on doing week read 
+        if(!_accounts.containsKey(publicKey)){
+            System.out.println("You don't have an account yet");
+            DecidedMessage decidedMessage = new DecidedMessage("CREATE", "Error: Account not created.",
+                    _server.getId(), _nonceCounter);
+            _broadcast.sendDecide(decidedMessage, clientPort);
+            _nonceCounter++;
+        }
+        
+    }
+
     public void checkBalance(PublicKey publicKey, int clientPort) {
         if (_accounts.containsKey(publicKey)) {
             synchronized (this) { // necessario??
@@ -140,6 +163,12 @@ public class IBFT {
         }
     }
 
+    /**
+     * doesn't add transactions if the block is already full
+     * calls make transaction, so the transaction can now be added to the new block
+     * 
+     * @param msg
+     */
     public synchronized void waitFunction(TransactionMessage msg) {
         try {
             _pendingTransactions.add(msg);
@@ -158,6 +187,10 @@ public class IBFT {
     }
 
     /**
+     * tries to append a transaction to a block
+     * if block already full calls waitFunction for this transaction.
+     * if block full call the consensus for this block of transactions
+     * 
      * @param msg
      * @param clientPort
      */
@@ -176,7 +209,7 @@ public class IBFT {
         msg.setClientPort(clientPort); // the transaction message has now the client port
 
         // validate the transaction
-        synchronized (this) {
+        synchronized (_waitFunctionLock) {
             // if it's already
             if (_currentTransactionBlock.isCompleted()) {
                 waitFunction(msg); // the request will be done here
@@ -194,9 +227,13 @@ public class IBFT {
 
                 // add transaction to block
                 _currentTransactionBlock.addTransaction(msg);
+
                 // if block full, perform consensus
-                if (_currentTransactionBlock.isCompleted())
+                if (_currentTransactionBlock.isCompleted()){
+                    _performingConsensus = true;
                     this.start(_currentTransactionBlock, _instance, clientPort);
+                }
+                    
             } else {
                 notEnoughMoney = true;
             }
@@ -209,6 +246,12 @@ public class IBFT {
             _nonceCounter++;
         }
     }
+
+
+
+
+
+
 
     /**
      * ==============================================================================
@@ -243,7 +286,7 @@ public class IBFT {
         _instance = instance;
         // _clientPort = clientPort;
 
-        if (_server.getId() == _leader) { // if it's the leader
+        if (_server.getId() == _leader) { // if it's the leader, there is no round change so leader is never byzantine
             Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue,
                     _server.getId(), _server.getPort());
             System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE: " + prePrepareMessage.toString());
@@ -257,7 +300,7 @@ public class IBFT {
         Message prepareMessage;
         if (_server.isFaulty()) {
             TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20.0f);
-            TransactionBlock byzantineBlock = new TransactionBlock();
+            TransactionBlock byzantineBlock = new TransactionBlock("TRANSACTIONS");
             byzantineBlock.addTransaction(byzantineMessage);
             prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineBlock, 1, _server.getPort());
             System.out.println("[SERVER " + _server.getId() + "] PREPARE: " + prepareMessage.toString());
@@ -280,6 +323,13 @@ public class IBFT {
 
     /**
      * when we receive a quorum of commit
+     * 
+     * perform the transactions in the block 
+     * insert the block in the blockchain 
+     * if 3 blocks commited then -> append status to blockchain
+     * popping transactions from the waiting list 
+     * 
+     * @param msg
      */
     public void receivedCommitQuorum(Message msg) {
         // DECIDE -> dar append da string à blockchain
@@ -315,17 +365,38 @@ public class IBFT {
 
             // insert the block in the blockchain
             _server.getBlockchain().addTransactionBlock(_currentTransactionBlock);
+            
             // update instance number of consensus
             _instance += 1;
+
+            // APPEND STATUS BLOCK TO BLOCKCHAIN
+            _blocksCommited += 1;
+            if (_blocksCommited % 4 == 0) { // start the new consensus for the status
+                
+                TransactionBlock snapshotBlock = new TransactionBlock("SNAPSHOT BLOCK");
+                snapshotBlock.addAccounts(_accounts);
+
+                // insert status block in blockchain 
+                this.start(snapshotBlock, _instance, -1); //client port doesnt matter
+            }    
+
+            
             System.out.println("[Server " + _server.getId() + "] ::: NEW INSTANCE ::: -> " + _instance);
+
             // clean this up for the next consensus
             this.cleanup();
-            _currentTransactionBlock = new TransactionBlock();
+
+            // creating the new block 
+            _currentTransactionBlock = new TransactionBlock("TRANSACTIONS");
+
+            // popping the transactions that were waiting for this consensus to end
             System.out.println("[Server " + _server.getId() + "] ::: NOTIFYING ALL :::");
             for(int i = 0; i < _pendingTransactions.size(); i++) {
-                this.notify();
+                _waitFunctionLock.notify();
             }
-            //this.notifyAll();
+
+            // consensus ended 
+            _performingConsensus = false;
         }
 
         // sending the confirmations (not atomically)
@@ -371,6 +442,7 @@ public class IBFT {
 
             boolean found = false;
 
+            // check if a server already has "prepared" this block 
             synchronized (this) {
                 while (true) {
                     for (TransactionBlock block : _prepareQuorum.keySet()) {

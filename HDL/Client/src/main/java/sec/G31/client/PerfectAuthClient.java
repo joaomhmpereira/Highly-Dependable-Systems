@@ -140,4 +140,31 @@ public class PerfectAuthClient {
 
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
     }
+
+    public Boolean verifySignature(String signatureToVerify, String expectedValue, int serverId){
+        try {
+            String serverKeyPath = _keyPath + serverId + "/public_key.der";
+            PublicKey key = readPublicKey(serverKeyPath);
+
+            byte[] cipheredDigestBytes = Base64.getDecoder().decode(signatureToVerify);
+
+
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] uncipheredDigestBytes = cipher.doFinal(cipheredDigestBytes);
+
+            byte[] plainBytes = expectedValue.getBytes();
+
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            return Arrays.equals(digestBytes, uncipheredDigestBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

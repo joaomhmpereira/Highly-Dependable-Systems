@@ -1,8 +1,9 @@
 package sec.G31;
 
+import java.io.Serializable;
 import java.security.PublicKey;
 
-public class Account {
+public class Account implements Serializable {
 
     private PublicKey _publicKey;
     private float _balance;
@@ -53,5 +54,23 @@ public class Account {
     @Override
     public String toString() {
         return ":::Account PubKey -> " + _publicKey.toString() + ", Balance -> " + _balance + " :::";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Account other = (Account) obj;
+        if (this._publicKey != other._publicKey && (this._publicKey == null || !this._publicKey.equals(other._publicKey))) {
+            return false;
+        }
+        if (Float.floatToIntBits(this._balance) != Float.floatToIntBits(other._balance)) {
+            return false;
+        }
+        return true;
     }
 }

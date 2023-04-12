@@ -2,6 +2,8 @@ package sec.G31;
 
 import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
+import sec.G31.utils.TransactionBlock;
+
 //import java.util.logging.Logger;
 import javax.crypto.*;
 import java.io.*;
@@ -59,6 +61,10 @@ public class PerfectAuthLink {
 
             msg.setCipheredDigest(cipherB64dString); // setting the field in the Message format
 
+            //if (msg.isBlockSet() && msg.getBlock().getType().equals("SNAPSHOT")){
+            //    System.out.println("PAC SENDING:: expectedValue: " + plainText);
+            //}
+
             // LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
             _stubChannel.sendMessage(destAddress, destPort, msg);
         } catch (Exception e) {
@@ -101,22 +107,28 @@ public class PerfectAuthLink {
      */
     public void receivedMessage(Message msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
+        System.out.println("PAC:: received message from " + msg.getSenderId() + " " + msg);
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (!msg.getType().equals("START") && !msg.getType().equals("BALANCE") 
+            if (!msg.getType().equals("START") && !msg.getType().equals("W_BALANCE") && !msg.getType().equals("S_BALANCE") 
                 && !msg.getType().equals("TRANSACTION") && !msg.getType().equals("CREATE")) {
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
-                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
+                } else {
+                    System.out.println("PAC:: message not verified from " + msg.getSenderId() + " " + msg);
                 }
             } else { // if message comes from client we don't have to verify the port
                 if (verifyMessage(msg)) {
-                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
+                } else {
+                    System.out.println("PAC:: message not verified from " + msg.getSenderId() + " " + msg);
                 }
             }
         } catch (BadPaddingException e1) { // decryption failed, keys don't match
-            if (msg.getType().equals("CREATE") || msg.getType().equals("BALANCE") || msg.getType().equals("TRANSACTION")) {
+            if (msg.getType().equals("CREATE") || msg.getType().equals("S_BALANCE")
+                || msg.getType().equals("W_BALANCE") || msg.getType().equals("TRANSACTION")) {
                 DecidedMessage decidedMessage = new DecidedMessage(msg.getType(), "Error: You don't have permission to perform this operation.", _server.getId(), _server.getIBFT().getNonceCounter());
                 _broadcastManager.sendDecide(decidedMessage, port);
             }
@@ -153,6 +165,32 @@ public class PerfectAuthLink {
         return pub;
     }
 
+    public String signSnapshotBlock(TransactionBlock block) {
+        try {
+            String serverKeyPath = _keyPath + _server.getId() + "/private_key.der";
+            PrivateKey key = readPrivateKey(serverKeyPath);
+
+            String accountsStrings = block.getAccounts().toString();
+            byte[] plainBytes = accountsStrings.getBytes();
+            
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            // cipher data
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] cipherDigestBytes = cipher.doFinal(digestBytes); // ciphering the digest bytes
+
+            String cipherB64dString = Base64.getEncoder().encodeToString(cipherDigestBytes);
+            return cipherB64dString;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /**
      * Given a message, verify its signature
      * 
@@ -162,7 +200,7 @@ public class PerfectAuthLink {
      */
     public Boolean verifyMessage(Message msg) throws Exception {
         PublicKey key;
-        if (msg.getType().equals("CREATE") || msg.getType().equals("BALANCE")){ // if it's a START or BALANCE message, the key is the public key of the client
+        if (msg.getType().equals("CREATE") || msg.getType().equals("S_BALANCE") || msg.getType().equals("W_BALANCE")) { // if it's a START or BALANCE message, the key is the public key of the client
             key = msg.getPublicKey();
         } else if (msg.getType().equals("TRANSACTION")) { // if it's a TRANSACTION message, the key is the source public key of the transaction
             key = msg.getValue().getSource();
@@ -189,6 +227,43 @@ public class PerfectAuthLink {
         messageDigest.update(plainBytes);
         byte[] digestBytes = messageDigest.digest();
 
+        //if (msg.isBlockSet() && msg.getBlock().getType().equals("SNAPSHOT")){
+        //    System.out.println("PAC:: expectedValue: " + plainText);
+        //    System.out.println("PAC:: digestBytes: " + Arrays.toString(digestBytes));
+        //    System.out.println("PAC:: uncipheredDigestBytes: " + Arrays.toString(uncipheredDigestBytes));
+        //}
+        
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
+    }
+
+    public Boolean verifySignature(String signatureToVerify, String expectedValue, int serverId){
+        try {
+            String serverKeyPath = _keyPath + serverId + "/public_key.der";
+            PublicKey key = readPublicKey(serverKeyPath);
+
+            byte[] cipheredDigestBytes = Base64.getDecoder().decode(signatureToVerify);
+
+
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] uncipheredDigestBytes = cipher.doFinal(cipheredDigestBytes);
+
+            byte[] plainBytes = expectedValue.getBytes();
+
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            //System.out.println("PAC:: expectedValue: " + expectedValue);
+            //System.out.println("PAC:: digestBytes: " + Arrays.toString(digestBytes));
+            //System.out.println("PAC:: uncipheredDigestBytes: " + Arrays.toString(uncipheredDigestBytes));
+
+            return Arrays.equals(digestBytes, uncipheredDigestBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

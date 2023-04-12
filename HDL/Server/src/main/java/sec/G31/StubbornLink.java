@@ -140,9 +140,10 @@ public class StubbornLink
 
     public void receivedMessage(Message msg, int port, InetAddress address){
         if (_receivedMessages.contains(msg)){
-            //System.out.println("SC:: received message already");
+            System.out.println("... received message already ... " + msg);
             return;
         }
+        System.out.println("!!! received new message !!! " + msg);
         _receivedMessages.add(msg);
         _PACchannel.receivedMessage(msg, port, address);
     }

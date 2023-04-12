@@ -23,6 +23,15 @@ public class Blockchain {
         return _blockChainList.size();
     }
 
+    public TransactionBlock getLastSnapshotBlock(){
+        for (int i = _blockChainList.size() - 1; i >= 0; i--){
+            if (_blockChainList.get(i).getType().equals("SNAPSHOT")){
+                return _blockChainList.get(i);
+            }
+        }
+        return null;
+    }
+
     public TransactionBlock getLastDecidedValue() {
         if (_blockChainList.size() == 0) {
             return null;

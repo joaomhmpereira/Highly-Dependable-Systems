@@ -4,6 +4,7 @@ import java.net.*;
 import java.util.Hashtable;
 
 import sec.G31.messages.*;
+import sec.G31.utils.TransactionBlock;
 
 // nao sei se vai ter que ser uma thread actually 
 
@@ -32,7 +33,7 @@ public class BroadcastManager {
         String type = msg.getType();
         switch (type) {
             case "PRE-PREPARE":
-                // System.out.println("received pre-prepare: " + msg.toString());
+                System.out.println("received pre-prepare: " + msg.toString());
                 _ibft.receivePrePrepare(msg);
                 break;
             case "PREPARE":
@@ -46,15 +47,13 @@ public class BroadcastManager {
             case "CREATE":
                 _ibft.createAccount(msg.getPublicKey(), clientPort);
                 break;
-            case "BALANCE":
+            case "S_BALANCE":
                 _ibft.checkBalance(msg.getPublicKey(), clientPort);
                 break;
             case "W_BALANCE":
+                System.out.println("Received weak balance check");
                 _ibft.weakCheckBalance(msg.getPublicKey(), clientPort);
                 break;
-            // case "S_BALANCE":
-            //     _ibft.strongCheckBalance(msg.getPublicKey(), clientPort);
-            //     break;
             case "TRANSACTION":
                 _ibft.makeTransaction(msg.getValue(), clientPort);
                 break;
@@ -104,5 +103,13 @@ public class BroadcastManager {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getSnapshotSignature(TransactionBlock block) {
+        return _PAChannel.signSnapshotBlock(block);
+    }
+
+    public Boolean verifySignature(String signature, String expected, int serverId){
+        return _PAChannel.verifySignature(signature, expected, serverId);
     }
 }

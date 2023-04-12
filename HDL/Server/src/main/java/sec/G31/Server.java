@@ -89,6 +89,10 @@ public class Server
         return _blockchain.getConsensusInstance();
     }
 
+    public TransactionBlock getLastSnapshotBlock(){
+        return _blockchain.getLastSnapshotBlock();
+    }
+
     public void receivedMessage(String txt, int port, InetAddress address){
         LOGGER.info("SERVER:: received Message from my UDP server");
         //_channel.sendMessage(address, port, "RESPOSTA");

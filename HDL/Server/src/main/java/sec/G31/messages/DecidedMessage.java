@@ -1,6 +1,10 @@
 package sec.G31.messages;
 
 import java.io.Serializable;
+import java.util.Hashtable;
+import java.util.List;
+
+import sec.G31.Account;
 
 public class DecidedMessage implements Serializable {
     private String _type;
@@ -10,6 +14,9 @@ public class DecidedMessage implements Serializable {
     private int _id;
     private String _cipheredDigest;
     private int _nonce;
+    private Hashtable<Integer, String> _signatures;
+    private List<Account> _accounts;
+    //private Hashtable<PublicKey, Account> _accounts;
 
     public DecidedMessage(String type, String value, int senderId, int nonce) {
         _type = type;
@@ -17,6 +24,8 @@ public class DecidedMessage implements Serializable {
         _value = value;
         _nonce = nonce;
         _balance = -1;
+        _signatures = null;
+        _accounts = null;
     }
 
     public DecidedMessage(String type, float balance, int senderId, int nonce) {
@@ -26,6 +35,8 @@ public class DecidedMessage implements Serializable {
         _id = -1;
         _nonce = nonce;
         _value = "";
+        _signatures = null;
+        _accounts = null;
     }
 
     public float getBalance() {
@@ -56,8 +67,32 @@ public class DecidedMessage implements Serializable {
         return _senderId;
     }
 
+    //public void setAccounts(Hashtable<PublicKey, Account> accounts) {
+    //    _accounts = accounts;
+    //}
+//
+    //public Hashtable<PublicKey, Account> getAccounts() {
+    //    return _accounts;
+    //}
+
+    public void setAccounts(List<Account> accounts) {
+        _accounts = accounts;
+    }
+
+    public List<Account> getAccounts() {
+        return _accounts;
+    }
+
     public String getCipheredDigest() {
         return _cipheredDigest;
+    }
+
+    public void setSignatures(Hashtable<Integer, String> signatures) {
+        _signatures = signatures;
+    }
+
+    public Hashtable<Integer, String> getSignatures() {
+        return _signatures;
     }
 
     public void setCipheredDigest(String cipheredDigest) {
@@ -74,9 +109,17 @@ public class DecidedMessage implements Serializable {
             return false;
         }
         DecidedMessage other = (DecidedMessage) obj;
-        return other.getValue().equals(_value) && other.getSenderId() == _senderId 
+        if (_signatures != null){
+            return other.getValue().equals(_value) && other.getSenderId() == _senderId 
+            && other.getId() == _id && other.getType().equals(_type) 
+            && other.getBalance() == _balance && other.getNonce() == _nonce 
+            && other.getSignatures().equals(_signatures)
+            && other.getAccounts().equals(_accounts);
+        } else {
+            return other.getValue().equals(_value) && other.getSenderId() == _senderId 
             && other.getId() == _id && other.getType().equals(_type) 
             && other.getBalance() == _balance && other.getNonce() == _nonce;
+        }   
     }
 
     @Override

@@ -16,16 +16,17 @@ public class Message implements Serializable {
     private int _nonce; // to differentiate equal messages
     private PublicKey _publicKey;
     private String _cipheredDigest;
+    private String _snapshotSignature;
 
     // server -> server
-    public Message(String type, int instance, int round, TransactionBlock block, int senderId, int senderPort) {
+    public Message(String type, int instance, int round, TransactionBlock block, int senderId, int senderPort, int nonce) {
         _type = type;
         _block = block;
         _round = round;
         _instance = instance;
         _senderId = senderId;
         _senderPort = senderPort;
-        _nonce = -1;
+        _nonce = nonce;
         _publicKey = null;
         _value = null;
     }
@@ -104,6 +105,14 @@ public class Message implements Serializable {
         return _publicKey;
     }
 
+    public String getSnapshotSignature() {
+        return _snapshotSignature;
+    }
+
+    public void setSnapshotSignature(String snapshotSignature) {
+        _snapshotSignature = snapshotSignature;
+    }
+
     public void setCipheredDigest(String cipheredDigest) {
         _cipheredDigest = cipheredDigest;
     }
@@ -143,13 +152,15 @@ public class Message implements Serializable {
                     && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort
                     && msg.getNonce() == _nonce;
         } else if (this.isBlockSet()) {
+            //System.out.println(msg.toString());
+            //System.out.println(this.toString());
             return msg.getType().equals(_type) && msg.getBlock().equals(_block)
                     && msg.getRound() == _round && msg.getInstance() == _instance
                     && msg.getSenderId() == _senderId && msg.getSenderPort() == _senderPort
                     && msg.getNonce() == _nonce;
-        } else
+        } else{
             return msg.getType().equals(_type) && msg.getSenderId() == _senderId
-                    && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;
-
+            && msg.getSenderPort() == _senderPort && msg.getNonce() == _nonce;
+        }    
     }
 }

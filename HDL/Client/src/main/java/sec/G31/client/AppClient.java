@@ -20,7 +20,7 @@ public class AppClient
     private int _clientId;
     private int _port;
     private int _F;
-    BroadcastManagerClient _broadcastManager;
+    private BroadcastManagerClient _broadcastManager;
 
     public AppClient(int clientId, String configFile, String address, int port, int numFaulties) {
         _nonceCounter = 0;
@@ -72,6 +72,13 @@ public class AppClient
         final int _port = Integer.parseInt(args[2]);
         final int _F = Integer.parseInt(args[3]);
         final String config = args[4];
+        PublicKey _publicKey;
+        try {
+            _publicKey = readPublicKey("../keys/clients/" + _clientId + "/public_key.der");
+        } catch (Exception e) {
+            _publicKey = null;
+            e.printStackTrace();
+        }
         Hashtable<Integer, Integer> _servers;
         //int _clientPort;
         System.out.println("=== Hello Client " + _clientId + " ===");
@@ -102,15 +109,15 @@ public class AppClient
                  *  TRANSFER 
                  */
                 else if (newMessage.equals("3")){
-                    System.out.print("Enter the source public key: ");
-                    String sourcePath = inputScanner.nextLine();
-                    PublicKey source = readPublicKey(sourcePath);
+                    //System.out.print("Enter the source public key: ");
+                    //String sourcePath = inputScanner.nextLine();
+                    //PublicKey source = readPublicKey(sourcePath);
                     System.out.print("Enter the destination public key: ");
                     String destinationPath = inputScanner.nextLine();
                     PublicKey destination = readPublicKey(destinationPath);
                     System.out.print("Enter the amount: ");
                     float amount = Float.parseFloat(inputScanner.nextLine());
-                    TransactionMessage transaction = new TransactionMessage(source, destination, amount);
+                    TransactionMessage transaction = new TransactionMessage(_publicKey, destination, amount);
                     Message msg = new Message("TRANSACTION", transaction, _clientId, _port, _nonceCounter);
                     _broadcastManager.sendBroadcast(msg);
                 } 
@@ -118,25 +125,24 @@ public class AppClient
                  * CHECK BALANCE
                  */
                 else if (newMessage.equals("2")){
-                    System.out.print("Enter the public key: ");
-                    String publicKeyPath = inputScanner.nextLine();
-                    PublicKey publicKey = readPublicKey(publicKeyPath);
+                    //System.out.print("Enter the public key: ");
+                    //String publicKeyPath = inputScanner.nextLine();
+                    //PublicKey publicKey = readPublicKey(publicKeyPath);
                     System.out.print("Do you want to perform a weak (W) or strong (S) read? ");
                     String readType = "";
                     Message msg;
                     while (!readType.equals("W") && !readType.equals("S"))
                     {
                         readType = inputScanner.nextLine();
-                        System.out.print("Please try again. (W) for weak; (S) for strong; (Q) to quit balance check");
-                        readType = inputScanner.nextLine();
                         if (readType.equals("Q"))
                             break;
                         else if (readType.equals("W")) {
-                            msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+                            System.out.println("Weak read");
+                            msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
                             _broadcastManager.sendBroadcast(msg);
                         }
                         else if (readType.equals("S")) {
-                            msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+                            msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
                             _broadcastManager.sendBroadcast(msg);                        
                         }
                     }
@@ -168,10 +174,11 @@ public class AppClient
                  * CREATE ACCOUNT
                  */
                 else if (newMessage.equals("1")){
-                    System.out.print("Enter the public key: ");
-                    String publicKeyPath = inputScanner.nextLine();
-                    PublicKey publicKey = readPublicKey(publicKeyPath);
-                    Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);
+                    //System.out.print("Enter the public key: ");
+                    //String publicKeyPath = inputScanner.nextLine();
+                    //PublicKey publicKey = readPublicKey(publicKeyPath);
+                    //_publicKey = publicKey;
+                    Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, _publicKey);
                     _broadcastManager.sendBroadcast(msg);
                 }
                 _nonceCounter++;

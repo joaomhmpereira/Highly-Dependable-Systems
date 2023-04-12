@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
+import sec.G31.Account;
 import sec.G31.messages.*;
 
 // nao sei se vai ter que ser uma thread actually 
@@ -105,6 +106,9 @@ public class BroadcastManagerClient
             case "TRANSACTION":
                 this.printTransaction(msg);
                 break;
+            case "S_BALANCE":
+                this.printBalance(msg);
+                break;
             default:
                 break;
         }
@@ -112,13 +116,28 @@ public class BroadcastManagerClient
         _decidedQuorum.remove(impStuff);
     }
 
-    public void receivedStrongBalance(DecidedMessage msg) {
-        
-    }
-
     public void receivedWeakBalance(DecidedMessage msg) {
         
+        if (msg.getBalance() != -1){
+            System.out.println("[CLIENT " + _clientId + "] Balance: " + msg.getBalance());
+            Hashtable<Integer, String> signatures = msg.getSignatures();
+            //Hashtable<PublicKey, Account> accounts = msg.getAccounts();
+            List<Account> accounts = msg.getAccounts();
+
+            for (Integer serverId : signatures.keySet()) {
+                String signature = signatures.get(serverId);
+                if (!_PAChannel.verifySignature(signature, accounts.toString(), serverId)) {
+                    System.out.println("[CLIENT " + _clientId + "] Signature verification failed");
+                    return;
+                }
+            }
+            // TO-DO: print account balance
+            System.out.println("[CLIENT " + _clientId + "] Signature verification successful");
+        }
+        else 
+            System.out.println("[CLIENT " + _clientId + "] " + msg.getValue());
     }
+
     public void receivedDecided(DecidedMessage msg) {
         // drop if older
         if(msg.getId() < _lastDecidedInstance 
@@ -132,6 +151,7 @@ public class BroadcastManagerClient
                 break;
             case "S_BALANCE":
                 this.receivedForQuorum(msg);
+                break;
             case "CREATE":
                 this.receivedForQuorum(msg);
                 break;

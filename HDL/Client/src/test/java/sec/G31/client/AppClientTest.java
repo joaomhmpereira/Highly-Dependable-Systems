@@ -36,6 +36,7 @@ public class AppClientTest {
 
     @Test
     public void fourCorrectServers() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 1 :::::::::::::::::::::::::::::::::::::::::::::::");
         this.setupKeys();
 
         Blockchain blockchain = new Blockchain();
@@ -84,6 +85,7 @@ public class AppClientTest {
 
     @Test
     public void threeCorrectOneFaulty() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 2 :::::::::::::::::::::::::::::::::::::::::::::::");
         this.setupKeys();
 
         Blockchain blockchain = new Blockchain();
@@ -134,6 +136,7 @@ public class AppClientTest {
      */
     @Test
     public void twoConsensusInstancesAllCorrect() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 3 :::::::::::::::::::::::::::::::::::::::::::::::");
         this.setupKeys();
 
         Blockchain blockchain = new Blockchain();
@@ -191,6 +194,7 @@ public class AppClientTest {
      */
     @Test
     public void twoConsensusInstancesOneFaulty() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 4 :::::::::::::::::::::::::::::::::::::::::::::::");
         this.setupKeys();
 
         Blockchain blockchain = new Blockchain();
@@ -229,7 +233,7 @@ public class AppClientTest {
 
         // Wait for the value2 to be decided
         try {
-            Thread.sleep(2500);
+            Thread.sleep(3500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -240,8 +244,13 @@ public class AppClientTest {
         assertEquals(blockchain, fourthServer.getServer().getBlockchain());
     }
 
+    /**
+     * 
+     * Unit test: test correcteness of weak reads and strong reads
+     */
     @Test
     public void testWeakReads() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 5 :::::::::::::::::::::::::::::::::::::::::::::::");
         this.setupKeys();
 
         float expectedBalance = 138.5f;
@@ -249,10 +258,10 @@ public class AppClientTest {
         float delta = 0.0001f;
 
         // Create 4 servers
-        App secondServer = new App(2, "127.0.0.1", 9446, "NF", "N", 1, "../configs/config5_4.txt");
-        App thirdServer = new App(3, "127.0.0.1", 9447, "NF", "N", 1, "../configs/config5_4.txt");
-        App fourthServer = new App(4, "127.0.0.1", 9448, "NF", "N", 1, "../configs/config5_4.txt");
-        App leader = new App(1, "127.0.0.1", 9445, "NF", "Y", 1, "../configs/config5_4.txt");
+        new App(2, "127.0.0.1", 9446, "NF", "N", 1, "../configs/config5_4.txt");
+        new App(3, "127.0.0.1", 9447, "NF", "N", 1, "../configs/config5_4.txt");
+        new App(4, "127.0.0.1", 9448, "F", "N", 1, "../configs/config5_4.txt");
+        new App(1, "127.0.0.1", 9445, "NF", "Y", 1, "../configs/config5_4.txt");
         AppClient client1 = new AppClient(1, "../configs/config5_4.txt", "127.0.0.1", 9563, 1);
         AppClient client2 = new AppClient(2, "../configs/config5_4.txt", "127.0.0.1", 9564, 1);
 
@@ -270,14 +279,14 @@ public class AppClientTest {
         client1.submitTransaction(client1PublicKey, client2PublicKey, 10.0f);
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        client2.performWeakRead(client2PublicKey);
+        client2.performWeakRead(client2PublicKey,2);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -288,9 +297,9 @@ public class AppClientTest {
         client2.submitTransaction(client2PublicKey, client1PublicKey, 40.0f);
         client1.submitTransaction(client1PublicKey, client2PublicKey, 20.0f);
 
-        client2.performWeakRead(client2PublicKey);
+        client2.performWeakRead(client2PublicKey, 2);
         try {
-            Thread.sleep(400);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -299,12 +308,60 @@ public class AppClientTest {
 
         client2.performStrongRead(client2PublicKey);
         try {
-            Thread.sleep(400);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         float balance3 = client2.getLastStrongRead();
         assertEquals(balance3, expectedStrong, delta);
+    }
+
+    /**
+     * Unit test: test that a forged signature is not accepted by the system
+     */
+    @Test
+    public void testWeakReadsForgedSignature() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 6 :::::::::::::::::::::::::::::::::::::::::::::::");
+        this.setupKeys();
+
+        float expectedBalance = -2.0f;
+        float delta = 0.0001f;
+
+        // Create 4 servers
+        new App(2, "127.0.0.1", 10446, "NF", "N", 1, "../configs/config6_4.txt");
+        new App(3, "127.0.0.1", 10447, "NF", "N", 1, "../configs/config6_4.txt");
+        new App(4, "127.0.0.1", 10448, "F", "N", 1, "../configs/config6_4.txt");
+        new App(1, "127.0.0.1", 10445, "NF", "Y", 1, "../configs/config6_4.txt");
+        AppClient client1 = new AppClient(1, "../configs/config6_4.txt", "127.0.0.1", 9565, 1);
+        AppClient client2 = new AppClient(2, "../configs/config6_4.txt", "127.0.0.1", 9566, 1);
+
+        client1.createAccount(client1PublicKey);
+        client2.createAccount(client2PublicKey);
+
+        //block 1
+        client2.submitTransaction(client2PublicKey, client1PublicKey, 4.0f);
+        client1.submitTransaction(client1PublicKey, client2PublicKey, 2.0f);
+        //block 2
+        client2.submitTransaction(client2PublicKey, client1PublicKey, 6.0f);
+        client1.submitTransaction(client1PublicKey, client2PublicKey, 8.0f);
+        //block 3
+        client2.submitTransaction(client2PublicKey, client1PublicKey, 20.0f);
+        client1.submitTransaction(client1PublicKey, client2PublicKey, 10.0f);
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        client2.performWeakRead(client2PublicKey,4);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        float balance1 = client2.getLastWeakRead();
+        assertEquals(expectedBalance, balance1, delta);
     }
 
     private byte[] readFile(String path) throws FileNotFoundException, IOException {

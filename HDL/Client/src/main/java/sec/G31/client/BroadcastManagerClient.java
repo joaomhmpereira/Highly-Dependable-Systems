@@ -135,10 +135,11 @@ public class BroadcastManagerClient
                 String signature = signatures.get(serverId);
                 if (!_PAChannel.verifySignature(signature, accounts.toString(), serverId)) {
                     System.out.println("[CLIENT " + _clientId + "] Signature verification failed");
+                    _lastWeakRead = -2.0f;
                     return;
                 }
             }
-            // TO-DO: print account balance
+
             System.out.println("[CLIENT " + _clientId + "] Balance: " + msg.getBalance());
             _lastWeakRead = msg.getBalance();
             System.out.println("[CLIENT " + _clientId + "] Signature verification successful. Servers that signed the snapshot: " + signatures.keySet().toString());

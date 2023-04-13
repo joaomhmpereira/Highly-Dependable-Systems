@@ -199,9 +199,9 @@ public class AppClient
         _nonceCounter++;
     }
 
-    public void performWeakRead(PublicKey publicKey){
+    public void performWeakRead(PublicKey publicKey, int serverId){
         Message msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey);
-        _broadcastManager.sendWeakBalanceRequest(msg, 2);
+        _broadcastManager.sendWeakBalanceRequest(msg, serverId);
         _nonceCounter++;
     }
 

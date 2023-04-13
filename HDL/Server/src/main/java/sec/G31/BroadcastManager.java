@@ -48,7 +48,7 @@ public class BroadcastManager {
                 _ibft.createAccount(msg.getPublicKey(), clientPort);
                 break;
             case "S_BALANCE":
-                _ibft.checkStrongBalance(msg.getPublicKey(), clientPort);
+                _ibft.strongCheckBalance(msg.getPublicKey(), clientPort, msg.getLastRead());
                 break;
             case "W_BALANCE":
                 System.out.println("Received weak balance check");

@@ -1,6 +1,7 @@
 package sec.G31.messages;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class DecidedMessage implements Serializable {
     private int _id;
     private String _cipheredDigest;
     private int _nonce;
+    private int _lastRead;
     private Hashtable<Integer, String> _signatures;
     private List<Account> _accounts;
     //private Hashtable<PublicKey, Account> _accounts;
@@ -26,9 +28,10 @@ public class DecidedMessage implements Serializable {
         _balance = -1;
         _signatures = null;
         _accounts = null;
+        _lastRead = -1;
     }
 
-    public DecidedMessage(String type, float balance, int senderId, int nonce) {
+    public DecidedMessage(String type, float balance, int senderId, int nonce, int lastRead) {
         _type = type;
         _senderId = senderId;
         _balance = balance;
@@ -37,6 +40,7 @@ public class DecidedMessage implements Serializable {
         _value = "";
         _signatures = null;
         _accounts = null;
+        _lastRead = lastRead;
     }
 
     public float getBalance() {
@@ -67,16 +71,12 @@ public class DecidedMessage implements Serializable {
         return _senderId;
     }
 
-    //public void setAccounts(Hashtable<PublicKey, Account> accounts) {
-    //    _accounts = accounts;
-    //}
-//
-    //public Hashtable<PublicKey, Account> getAccounts() {
-    //    return _accounts;
-    //}
+    public int getLastRead() {
+        return _lastRead;
+    }
 
     public void setAccounts(List<Account> accounts) {
-        _accounts = accounts;
+        _accounts = new ArrayList<Account>(accounts);
     }
 
     public List<Account> getAccounts() {
@@ -100,7 +100,7 @@ public class DecidedMessage implements Serializable {
     }
 
     public String stringForDigest(){
-        return _value + "." + _senderId + "." + _id + "." + _type + "." + _balance + "." + _nonce;
+        return _value + "." + _senderId + "." + _id + "." + _type + "." + _balance + "." + _nonce + "." + _lastRead;
     }
 
     @Override
@@ -114,11 +114,11 @@ public class DecidedMessage implements Serializable {
             && other.getId() == _id && other.getType().equals(_type) 
             && other.getBalance() == _balance && other.getNonce() == _nonce 
             && other.getSignatures().equals(_signatures)
-            && other.getAccounts().equals(_accounts);
+            && other.getAccounts().equals(_accounts) && other.getLastRead() == _lastRead;
         } else {
             return other.getValue().equals(_value) && other.getSenderId() == _senderId 
             && other.getId() == _id && other.getType().equals(_type) 
-            && other.getBalance() == _balance && other.getNonce() == _nonce;
+            && other.getBalance() == _balance && other.getNonce() == _nonce && other.getLastRead() == _lastRead;
         }   
     }
 

@@ -155,7 +155,7 @@ public class IBFT {
             System.out.println(
                     "[SERVER " + _server.getId() + "]: Balance checked successfully. Client: " + clientPort);
             DecidedMessage decidedMessage = new DecidedMessage("W_BALANCE", account.getBalance(), _server.getId(),
-                    _nonceCounter);
+                    _nonceCounter, _blocksCommited);
             // add consensus signatures
             Hashtable<Integer, String> signatures = snapshotBlock.getSignatures();
             System.out.println("SIGNATURES SIZE: " + signatures.size());
@@ -176,20 +176,20 @@ public class IBFT {
         
     }
 
-    public void checkStrongBalance(PublicKey publicKey, int clientPort) {
-        if (accountExists(publicKey)) {
+    public void strongCheckBalance(PublicKey publicKey, int clientPort, int lastRead) {
+        if (accountExists(publicKey) && lastRead <= _blocksCommited) {
             synchronized (this) { // necessario??
                 //Account account = _accounts.get(publicKey);
                 Account account = getAccount(publicKey);
                 System.out.println(
                         "[SERVER " + _server.getId() + "]: Balance checked successfully. Client: " + clientPort);
                 DecidedMessage decidedMessage = new DecidedMessage("S_BALANCE", account.getBalance(), _server.getId(),
-                        _nonceCounter);
+                        _nonceCounter, _blocksCommited);
                 _broadcast.sendDecide(decidedMessage, clientPort);
                 _nonceCounter++;
             }
         } else {
-            DecidedMessage decidedMessage = new DecidedMessage("S_BALANCE", -1, _server.getId(), _nonceCounter);
+            DecidedMessage decidedMessage = new DecidedMessage("S_BALANCE", -1, _server.getId(), _nonceCounter, _blocksCommited);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;
             //System.out.println("Account doesn't exist");

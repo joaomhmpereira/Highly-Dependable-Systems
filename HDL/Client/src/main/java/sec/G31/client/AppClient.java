@@ -21,9 +21,11 @@ public class AppClient
     private int _port;
     private int _F;
     private BroadcastManagerClient _broadcastManager;
+    private int _lastRead;
 
     public AppClient(int clientId, String configFile, String address, int port, int numFaulties) {
         _nonceCounter = 0;
+        _lastRead = 0;
         _clientId = clientId;
         _port = port;
         _F = numFaulties;
@@ -67,6 +69,7 @@ public class AppClient
         }
         
         int _nonceCounter = 0;
+        int _lastRead = 0;
         int _clientId = Integer.parseInt(args[0]);
         final String _address = args[1];
         final int _port = Integer.parseInt(args[2]);
@@ -134,11 +137,11 @@ public class AppClient
                         if (readType.equals("Q"))
                             break;
                         else if (readType.equals("W")) {
-                            msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
+                            msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, _publicKey, _lastRead);
                             _broadcastManager.sendWeakBalanceRequest(msg, 2);
                         }
                         else if (readType.equals("S")) {
-                            msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
+                            msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, _publicKey, _lastRead);
                             _broadcastManager.sendBroadcast(msg);                        
                         }
                     }
@@ -174,7 +177,7 @@ public class AppClient
                     //String publicKeyPath = inputScanner.nextLine();
                     //PublicKey publicKey = readPublicKey(publicKeyPath);
                     //_publicKey = publicKey;
-                    Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, _publicKey);
+                    Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, _publicKey, _lastRead);
                     _broadcastManager.sendBroadcast(msg);
                 }
                 _nonceCounter++;
@@ -194,13 +197,13 @@ public class AppClient
     }
 
     public void performStrongRead(PublicKey publicKey){
-        Message msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+        Message msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey, _lastRead);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
     }
 
     public void performWeakRead(PublicKey publicKey, int serverId){
-        Message msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+        Message msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey, _lastRead);
         _broadcastManager.sendWeakBalanceRequest(msg, serverId);
         _nonceCounter++;
     }
@@ -214,9 +217,13 @@ public class AppClient
     }
 
     public void createAccount(PublicKey publicKey){
-        Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey);
+        Message msg = new Message("CREATE", _clientId, _port, _nonceCounter, publicKey, _lastRead);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
+    }
+
+    public void setLastRead(int lastRead){
+        _lastRead = lastRead;
     }
 
     private static byte[] readFile(String path) throws FileNotFoundException, IOException {

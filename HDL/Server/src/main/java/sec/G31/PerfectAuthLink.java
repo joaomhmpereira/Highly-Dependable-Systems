@@ -107,23 +107,19 @@ public class PerfectAuthLink {
      */
     public void receivedMessage(Message msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
-        System.out.println("PAC:: received message from " + msg.getSenderId() + " " + msg);
+        //System.out.println("PAC:: received message from " + msg.getSenderId() + " " + msg);
         try {
             // verify that it has came from the correct port and with proper authentication
             if (!msg.getType().equals("START") && !msg.getType().equals("W_BALANCE") && !msg.getType().equals("S_BALANCE") 
                 && !msg.getType().equals("TRANSACTION") && !msg.getType().equals("CREATE")) {
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
-                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
-                } else {
-                    System.out.println("PAC:: message not verified from " + msg.getSenderId() + " " + msg);
                 }
             } else { // if message comes from client we don't have to verify the port
                 if (verifyMessage(msg)) {
-                    System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
+                    //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
                     _broadcastManager.receivedMessage(msg, port); // inform the upper layer
-                } else {
-                    System.out.println("PAC:: message not verified from " + msg.getSenderId() + " " + msg);
                 }
             }
         } catch (BadPaddingException e1) { // decryption failed, keys don't match
@@ -165,12 +161,11 @@ public class PerfectAuthLink {
         return pub;
     }
 
-    public String signSnapshotBlock(TransactionBlock block) {
+    public String signSnapshotBlock(String accountsStrings) {
         try {
             String serverKeyPath = _keyPath + _server.getId() + "/private_key.der";
             PrivateKey key = readPrivateKey(serverKeyPath);
 
-            String accountsStrings = block.getAccounts().toString();
             byte[] plainBytes = accountsStrings.getBytes();
             
             // digest data

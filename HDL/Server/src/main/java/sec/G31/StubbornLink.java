@@ -125,7 +125,7 @@ public class StubbornLink
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    timeout *= 2;
+                    timeout *= 2; // exponential backoff
                 }
                 //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                 //_UDPchannel.sendDecide(_dest, _port, _msg);
@@ -140,10 +140,10 @@ public class StubbornLink
 
     public void receivedMessage(Message msg, int port, InetAddress address){
         if (_receivedMessages.contains(msg)){
-            System.out.println("... received message already ... " + msg);
+            //System.out.println("... received message already ... " + msg);
             return;
         }
-        System.out.println("!!! received new message !!! " + msg);
+        //System.out.println("!!! received new message !!! " + msg);
         _receivedMessages.add(msg);
         _PACchannel.receivedMessage(msg, port, address);
     }

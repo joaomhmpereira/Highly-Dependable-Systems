@@ -33,7 +33,7 @@ public class BroadcastManager {
         String type = msg.getType();
         switch (type) {
             case "PRE-PREPARE":
-                System.out.println("received pre-prepare: " + msg.toString());
+                //System.out.println("received pre-prepare: " + msg.toString());
                 _ibft.receivePrePrepare(msg);
                 break;
             case "PREPARE":
@@ -48,7 +48,7 @@ public class BroadcastManager {
                 _ibft.createAccount(msg.getPublicKey(), clientPort);
                 break;
             case "S_BALANCE":
-                _ibft.checkBalance(msg.getPublicKey(), clientPort);
+                _ibft.checkStrongBalance(msg.getPublicKey(), clientPort);
                 break;
             case "W_BALANCE":
                 System.out.println("Received weak balance check");
@@ -57,24 +57,6 @@ public class BroadcastManager {
             case "TRANSACTION":
                 _ibft.makeTransaction(msg.getValue(), clientPort);
                 break;
-            // case "START":
-            // synchronized(this){
-            // msg.setInstance(_consensusInstance);
-            // _consensusInstance++;
-            // while(_ibft.getConsensusInstance() < msg.getInstance()){
-            // try {
-            // System.out.println("Not my turn (I'm instance " + msg.getInstance() + "),
-            // waiting for instance " + _ibft.getConsensusInstance() + " to finish");
-            // wait();
-            // } catch (InterruptedException e) {
-            // e.printStackTrace();
-            // }
-            // }
-            //
-            // System.out.println("Starting IBFT for instance " + msg.getInstance());
-            // _ibft.start(msg.getValue(), msg.getInstance(), msg.getSenderPort());
-            // }
-            // break;
             default:
                 System.out.println("Unknown message type: " + type);
                 break;
@@ -105,8 +87,8 @@ public class BroadcastManager {
         }
     }
 
-    public String getSnapshotSignature(TransactionBlock block) {
-        return _PAChannel.signSnapshotBlock(block);
+    public String getSnapshotSignature(String accountsStrings) {
+        return _PAChannel.signSnapshotBlock(accountsStrings);
     }
 
     public Boolean verifySignature(String signature, String expected, int serverId){

@@ -58,9 +58,6 @@ public class IBFT {
     // for the weak reads, every 3 blocks commited we start a consensus for status
     private int _blocksCommited; 
 
-    private Object _waitFunctionLock = new Object();
-
-
     /**
      * we only responde to messages of the same instance, we discard every message
      * that is from an instance from the future. Nao ha problema porque gracas ao
@@ -144,13 +141,27 @@ public class IBFT {
             _nonceCounter++;
         } else if (_server.getLastSnapshotBlock() != null) {
             //Account account = _accounts.get(publicKey);
-            Account account = getAccount(publicKey);
+            TransactionBlock snapshotBlock = _server.getLastSnapshotBlock();
+
+            Account account = null;
+            List<Account> accounts = snapshotBlock.getAccounts();
+            for (Account a : accounts) {
+                if (a.getPublicKey().equals(publicKey)) {
+                    account = a;
+                    break;
+                }
+            }
+
             System.out.println(
                     "[SERVER " + _server.getId() + "]: Balance checked successfully. Client: " + clientPort);
             DecidedMessage decidedMessage = new DecidedMessage("W_BALANCE", account.getBalance(), _server.getId(),
                     _nonceCounter);
-            TransactionBlock snapshotBlock = _server.getLastSnapshotBlock();
             // add consensus signatures
+            Hashtable<Integer, String> signatures = snapshotBlock.getSignatures();
+            System.out.println("SIGNATURES SIZE: " + signatures.size());
+            if (signatures.size() > 0) {
+                System.out.println("SIGNATURES: " + signatures.toString());
+            }
             decidedMessage.setSignatures(snapshotBlock.getSignatures());
             decidedMessage.setAccounts(snapshotBlock.getAccounts());
             _broadcast.sendDecide(decidedMessage, clientPort);
@@ -165,7 +176,7 @@ public class IBFT {
         
     }
 
-    public void checkBalance(PublicKey publicKey, int clientPort) {
+    public void checkStrongBalance(PublicKey publicKey, int clientPort) {
         if (accountExists(publicKey)) {
             synchronized (this) { // necessario??
                 //Account account = _accounts.get(publicKey);
@@ -181,7 +192,7 @@ public class IBFT {
             DecidedMessage decidedMessage = new DecidedMessage("S_BALANCE", -1, _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
             _nonceCounter++;
-            System.out.println("Account doesn't exist");
+            //System.out.println("Account doesn't exist");
         }
     }
 
@@ -219,7 +230,6 @@ public class IBFT {
     public void makeTransaction(TransactionMessage msg, int clientPort) {
         // if the accounts don't exist, send error message
         if (!accountExists(msg.getSource()) || !accountExists(msg.getDestination())) {
-            System.out.println("one of the accounts doesn't exist");
             DecidedMessage decidedMessage = new DecidedMessage("TRANSACTION",
                     "Error: One of the accounts doesn't exist.", _server.getId(), _nonceCounter);
             _broadcast.sendDecide(decidedMessage, clientPort);
@@ -231,7 +241,7 @@ public class IBFT {
         msg.setClientPort(clientPort); // the transaction message has now the client port
 
         // validate the transaction
-        synchronized (_waitFunctionLock) {
+        synchronized (this) {
             // if it's already
             if (_currentTransactionBlock.isCompleted()) {
                 waitFunction(msg); // the request will be done here
@@ -239,8 +249,6 @@ public class IBFT {
             }
             Account source = getAccount(msg.getSource());
             Account destination = getAccount(msg.getDestination());
-            //Account source = _accounts.get(msg.getSource());
-            //Account destination = _accounts.get(msg.getDestination());
             float amount = msg.getAmount();
 
             // not enough money, send error message
@@ -270,12 +278,6 @@ public class IBFT {
         }
     }
 
-
-
-
-
-
-
     /**
      * ==============================================================================
      * IBFT ALGORITHM implementation
@@ -301,40 +303,41 @@ public class IBFT {
      * for now there is only 1 instance and only 1 round so there is no problem
      */
     public void start(TransactionBlock value, int instance, int clientPort) {
-        // LOGGER.info("IBFT:: started");
-        // System.out.println("IBFT:: started instance: " + instance + " value: " +
-        // value);
         System.out.println("[SERVER " + _server.getId() + "] IBFT:: started new instance " + instance);
         _inputValue = value;
         _instance = instance;
-        // _clientPort = clientPort;
 
-        if (_server.getId() == _leader) { // if it's the leader, there is no round change so leader is never byzantine
+        if (_server.getId() == _leader) { // if it's the leader
+            if (_server.isFaulty()){
+                //if leader is faulty, dont start consensus
+                return;
+            }
             Message prePrepareMessage = new Message(PRE_PREPARE_MSG, _instance, _currentRound, _inputValue,
                     _server.getId(), _server.getPort(), _nonceCounter++);
-            System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE: " + prePrepareMessage.toString());
+            //System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE: " + prePrepareMessage.toString());
             _broadcast.sendBroadcast(prePrepareMessage);
         }
-        // set timer -> ainda nao precisamos porque ainda nao ha rondas
     }
 
     public void sendPrepares(int instance, int round, TransactionBlock value) {
         // set timer -> ainda nao precisamos porque ainda nao ha rondas
         Message prepareMessage;
         if (_server.isFaulty()) {
-            TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20.0f);
-            TransactionBlock byzantineBlock = new TransactionBlock("TRANSACTIONS");
-            byzantineBlock.addTransaction(byzantineMessage);
-            prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineBlock, 1, _server.getPort(), _nonceCounter++);
-            System.out.println("[SERVER " + _server.getId() + "] PREPARE: " + prepareMessage.toString());
+            //TransactionMessage byzantineMessage = new TransactionMessage(null, null, 20.0f);
+            //TransactionBlock byzantineBlock = new TransactionBlock("TRANSACTIONS");
+            //byzantineBlock.addTransaction(byzantineMessage);
+            //prepareMessage = new Message(PREPARE_MSG, instance, round, byzantineBlock, 1, _server.getPort(), _nonceCounter++);
+            //drop message
+            return;
+            //System.out.println("[SERVER " + _server.getId() + "] PREPARE: " + prepareMessage.toString());
         } else {
             prepareMessage = new Message(PREPARE_MSG, instance, round, value, _server.getId(), _server.getPort(), _nonceCounter++);   
-            System.out.println("[SERVER " + _server.getId() + "] PREPARE: " + prepareMessage.toString());
+            //System.out.println("[SERVER " + _server.getId() + "] PREPARE: " + prepareMessage.toString());
+            if (value.getType().equals("SNAPSHOT")){
+                prepareMessage.setSnapshotSignature(_ourSignature);
+            }
+            _broadcast.sendBroadcast(prepareMessage);
         }
-        if (value.getType().equals("SNAPSHOT")){
-            prepareMessage.setSnapshotSignature(_ourSignature);
-        }
-        _broadcast.sendBroadcast(prepareMessage);
     }
 
     public void receivedPrepareQuorum(int round, TransactionBlock value) {
@@ -359,15 +362,10 @@ public class IBFT {
      */
     public void receivedCommitQuorum(Message msg) {
         // DECIDE -> dar append da string à blockchain
-        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED instance " + _instance
-                + " =====      Block hash code -> "
-                + msg.getBlock().hashCode());
-
+        LOGGER.info(" [SERVER " + _server.getId() + "] ===== DECIDED instance " + _instance + " =====");
         
         TransactionBlock block = msg.getBlock();
-
         synchronized (this) {
-        
             if (block.getType().equals("TRANSACTIONS")) {
                 List<TransactionMessage> transactions = msg.getBlock().getTransactions();
                 // perform the transaction in order
@@ -391,10 +389,10 @@ public class IBFT {
                     // perform the transaction fee
                     source.subtractBalance(amount * _fee);
                     _leaderAccount.addBalance(amount * _fee);
-                    System.out.println(
-                            "[Server " + _server.getId() + "] Leader Account - new bal: " + _leaderAccount.getBalance());
+                    //System.out.println("[Server " + _server.getId() + "] Leader Account - new bal: " + _leaderAccount.getBalance());
                 }
             } else {
+                System.out.println("[SERVER " + _server.getId() + "] Adding signatures to block, (size: " + _consesnsusSignatures.size() + ")");
                 block.addSignatures(_consesnsusSignatures);
             }
 
@@ -408,11 +406,11 @@ public class IBFT {
 
             // APPEND STATUS BLOCK TO BLOCKCHAIN
             _blocksCommited += 1;
-            if (_blocksCommited % 2 == 0) { // start the new consensus for the status
+            if (_blocksCommited % 3 == 0) { // start the new consensus for the status
                 this.cleanup();
                 TransactionBlock snapshotBlock = new TransactionBlock("SNAPSHOT");
                 snapshotBlock.setAccounts(_accounts);
-                System.out.println("[Server " + _server.getId() + "] ::: NEW SNAPSHOT ::: -> " + snapshotBlock.hashCode() + " - Instance " + _instance);
+                //System.out.println("[Server " + _server.getId() + "] ::: NEW SNAPSHOT ::: -> " + snapshotBlock.hashCode() + " - Instance " + _instance);
                 // insert status block in blockchain 
                 this.start(snapshotBlock, _instance, -1); //client port doesnt matter
             }    
@@ -427,9 +425,9 @@ public class IBFT {
             _currentTransactionBlock = new TransactionBlock("TRANSACTIONS");
 
             // popping the transactions that were waiting for this consensus to end
-            System.out.println("[Server " + _server.getId() + "] ::: NOTIFYING ALL :::");
+            //System.out.println("[Server " + _server.getId() + "] ::: NOTIFYING ALL :::");
             for(int i = 0; i < _pendingTransactions.size(); i++) {
-                _waitFunctionLock.notify();
+                this.notify();
             }
 
         }
@@ -453,15 +451,19 @@ public class IBFT {
      */
     public void receivePrePrepare(Message msg) {
         // if it's from the leader of this round and instance
-        System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE: " + msg.toString());
+        //System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE: " + msg.toString());
         if (msg.getInstance() == _instance && msg.getRound() == _currentRound &&
                 msg.getSenderId() == _leader && !_receivedMessages.contains(msg)) {
-            // set timer to running
-            // _sentPrepare = true;
-            System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE2: " + msg.toString());
+            //System.out.println("[SERVER " + _server.getId() + "] PRE-PREPARE2: " + msg.toString());
             if (msg.getBlock().getType().equals("SNAPSHOT")) {
-                String snapshotSignature = _broadcast.getSnapshotSignature(msg.getBlock());
+                String snapshotSignature;
+                if (_server.isFaulty()){
+                    snapshotSignature = _broadcast.getSnapshotSignature("FAKE");
+                } else {
+                    snapshotSignature = _broadcast.getSnapshotSignature(msg.getBlock().getAccounts().toString());
+                }
                 _consesnsusSignatures.put(_server.getId(), snapshotSignature);
+                System.out.println("[SERVER " + _server.getId() + "] ADDED OUR SIGNATURE TO LIST (size: " + _consesnsusSignatures.size() + ")");
                 _ourSignature = snapshotSignature;
             }
 
@@ -485,6 +487,7 @@ public class IBFT {
                 return;
             } else {
                 _consesnsusSignatures.put(msg.getSenderId(), msg.getSnapshotSignature());
+                System.out.println("[SERVER " + _server.getId() + "] VALID SIGNATURE, adding to consensusSignatures (size: " + _consesnsusSignatures.size() + ")");
             }
         }   
 

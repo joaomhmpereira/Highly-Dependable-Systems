@@ -125,9 +125,6 @@ public class AppClient
                  * CHECK BALANCE
                  */
                 else if (newMessage.equals("2")){
-                    //System.out.print("Enter the public key: ");
-                    //String publicKeyPath = inputScanner.nextLine();
-                    //PublicKey publicKey = readPublicKey(publicKeyPath);
                     System.out.print("Do you want to perform a weak (W) or strong (S) read? ");
                     String readType = "";
                     Message msg;
@@ -137,9 +134,8 @@ public class AppClient
                         if (readType.equals("Q"))
                             break;
                         else if (readType.equals("W")) {
-                            System.out.println("Weak read");
                             msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
-                            _broadcastManager.sendBroadcast(msg);
+                            _broadcastManager.sendWeakBalanceRequest(msg, 2);
                         }
                         else if (readType.equals("S")) {
                             msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, _publicKey);
@@ -197,10 +193,24 @@ public class AppClient
         _nonceCounter++;
     }
 
-    public void checkBalance(PublicKey publicKey){
+    public void performStrongRead(PublicKey publicKey){
         Message msg = new Message("S_BALANCE", _clientId, _port, _nonceCounter, publicKey);
         _broadcastManager.sendBroadcast(msg);
         _nonceCounter++;
+    }
+
+    public void performWeakRead(PublicKey publicKey){
+        Message msg = new Message("W_BALANCE", _clientId, _port, _nonceCounter, publicKey);
+        _broadcastManager.sendWeakBalanceRequest(msg, 2);
+        _nonceCounter++;
+    }
+
+    public float getLastWeakRead(){
+        return _broadcastManager.getLastWeakRead();
+    }
+
+    public float getLastStrongRead(){
+        return _broadcastManager.getLastStrongRead();
     }
 
     public void createAccount(PublicKey publicKey){

@@ -56,7 +56,7 @@ public class TransactionBlock implements Serializable {
     }
 
     public void setAccounts(List<Account> accounts){
-        _accounts = accounts;
+        _accounts = new ArrayList<Account>(accounts);
     }
 
     public Hashtable<Integer, String> getSignatures(){
@@ -64,7 +64,8 @@ public class TransactionBlock implements Serializable {
     }
 
     public void addSignatures(Hashtable<Integer, String> signatures){
-        _signatures = signatures;
+        //_signatures = signatures;
+        _signatures = new Hashtable<Integer, String>(signatures);
     }
     
     public boolean containsTransaction(TransactionMessage transaction){

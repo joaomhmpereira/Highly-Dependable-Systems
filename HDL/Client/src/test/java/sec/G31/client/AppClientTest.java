@@ -364,6 +364,47 @@ public class AppClientTest {
         assertEquals(expectedBalance, balance1, delta);
     }
 
+    @Test
+    public void fourCorrectServersByzantineClient() {
+        System.out.println("::::::::::::::::::::::::::::::::::::::::: TEST 7 :::::::::::::::::::::::::::::::::::::::::::::::");
+        this.setupKeys();
+
+        Blockchain blockchain = new Blockchain();
+
+        // Create 4 servers
+        App secondServer = new App(2, "127.0.0.1", 11446, "NF", "N", 1, "../configs/config7_4.txt");
+        App thirdServer = new App(3, "127.0.0.1", 11447, "NF", "N", 1, "../configs/config7_4.txt");
+        App fourthServer = new App(4, "127.0.0.1", 11448, "NF", "N", 1, "../configs/config7_4.txt");
+        App leader = new App(1, "127.0.0.1", 11445, "NF", "Y", 1, "../configs/config7_4.txt");
+        AppClient client1 = new AppClient(1, "../configs/config7_4.txt", "127.0.0.1", 9567, 1);
+        AppClient client2 = new AppClient(2, "../configs/config7_4.txt", "127.0.0.1", 9568, 1);
+
+        // client.submitValue(valueToDecide);
+        client1.createAccount(client1PublicKey);
+        client2.createAccount(client2PublicKey);
+
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        client2.submitTransaction(client2PublicKey, client1PublicKey, 15.0f);
+        client1.submitTransaction(client2PublicKey, client1PublicKey, 30.0f);
+
+        // Wait for the value to be decided
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(blockchain, leader.getServer().getBlockchain());
+        assertEquals(blockchain, secondServer.getServer().getBlockchain());
+        assertEquals(blockchain, thirdServer.getServer().getBlockchain());
+        assertEquals(blockchain, fourthServer.getServer().getBlockchain());
+    }
+
     private byte[] readFile(String path) throws FileNotFoundException, IOException {
         FileInputStream fis = new FileInputStream(path);
         byte[] content = new byte[fis.available()];

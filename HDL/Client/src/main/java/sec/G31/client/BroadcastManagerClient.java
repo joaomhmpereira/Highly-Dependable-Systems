@@ -103,7 +103,6 @@ public class BroadcastManagerClient
             // _first = false;
             _lastDecidedInstance = msg.getId();
             _decidedInstances.add(_lastDecidedInstance);
-            System.out.println("responses: " + _decidedQuorum.get(impStuff).size());
             switch (msg.getType()) {
                 case "CREATE":
                     this.printCreate(msg);

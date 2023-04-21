@@ -23,7 +23,7 @@ public class PerfectAuthClient {
     private BroadcastManagerClient _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private final String _keyPath = "../keys/";
-    private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
+    private final String CIPHER_ALGO = "RSA/ECB/PKCS1PADDING";
     private final String DIGEST_ALGO = "SHA-256";
 
     public PerfectAuthClient(BroadcastManagerClient broadcastManager, InetAddress serverAddress,
@@ -70,13 +70,10 @@ public class PerfectAuthClient {
      * verifies that it has come proper authenticated and from the correct port
      */
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address) {
-        // LOGGER.info("PAC:: received message");
-        //System.out.println("PAC:: received message");
         try {
             // verify that it has came from the correct port and with proper authentication
             if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
-                //System.out.println("PAC:: message verified");
-                _broadcastManager.receiveDecided(msg); // inform the upper layer
+                _broadcastManager.receivedDecided(msg); // inform the upper layer
             }
 
         } catch (Exception e) {
@@ -142,5 +139,32 @@ public class PerfectAuthClient {
         byte[] digestBytes = messageDigest.digest();
 
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
+    }
+
+    public Boolean verifySignature(String signatureToVerify, String expectedValue, int serverId){
+        try {
+            String serverKeyPath = _keyPath + serverId + "/public_key.der";
+            PublicKey key = readPublicKey(serverKeyPath);
+
+            byte[] cipheredDigestBytes = Base64.getDecoder().decode(signatureToVerify);
+
+
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] uncipheredDigestBytes = cipher.doFinal(cipheredDigestBytes);
+
+            byte[] plainBytes = expectedValue.getBytes();
+
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            return Arrays.equals(digestBytes, uncipheredDigestBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

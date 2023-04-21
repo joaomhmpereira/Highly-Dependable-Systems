@@ -63,11 +63,9 @@ public class UDPchannel
     }
 
     public void receivedMessage(Message msg, int port, InetAddress address){
-        //LOGGER.info("UDP:: received message");
+        //System.out.println("UDPchannel:: received message" + msg.toString());
         AckMessage ack = new AckMessage(msg, port);
         this.sendAck(address, port, ack);
         _stubChannel.receivedMessage(msg, port, address);
-
     }
-
 }

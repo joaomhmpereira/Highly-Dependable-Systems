@@ -1,5 +1,6 @@
 package sec.G31.client;
-import java.util.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 
 import sec.G31.messages.AckMessage;
 import sec.G31.messages.DecidedMessage;
@@ -14,23 +15,20 @@ import java.net.*;
  */
 public class UDPServerClient extends Thread{
 
-	/**
-	 * Maximum size for a UDP packet. The field size sets a theoretical limit of
-	 * 65,535 bytes (8 byte header + 65,527 bytes of data) for a UDP datagram.
-	 * However the actual limit for the data length, which is imposed by the IPv4
-	 * protocol, is 65,507 bytes (65,535 − 8 byte UDP header − 20 byte IP header.
-	 */
+	
 	private static final int MAX_UDP_DATA_SIZE = (64 * 1024 - 1) - 8 - 20;
-
-    private final static Logger LOGGER = Logger.getLogger(UDPServerClient.class.getName());
-
+    private static Set<Class<? extends Serializable>> possibleClasses = new HashSet<>();
 	/** Buffer size for receiving a UDP packet. */
 	private static final int BUFFER_SIZE = MAX_UDP_DATA_SIZE;
 
     /** datagram socket for this server */
     private DatagramSocket _socket;
-
     private UDPChannelClient _UDPchannel;
+
+    static {
+        possibleClasses.add(DecidedMessage.class);
+        possibleClasses.add(AckMessage.class);
+    }
 
     /**
      * Creates the UDP server, links it to the udp channel that created it.
@@ -39,7 +37,6 @@ public class UDPServerClient extends Thread{
 	public UDPServerClient(UDPChannelClient channel, int portNumber, DatagramSocket socket) throws IOException{
         _UDPchannel = channel;
         _socket = socket;
-		//System.out.printf("Server will be connected to port %d %n", _port);
 	}
 
     /**
@@ -58,7 +55,6 @@ public class UDPServerClient extends Thread{
 
             /** it will run in a separate thread */
             public void run(){
-                //System.out.printf("UDP S:: %s %d %s\n", _address, _port, _msg);
                 _UDPchannel.receivedMessage(_msg, _port, _address);
             }
         }
@@ -66,7 +62,6 @@ public class UDPServerClient extends Thread{
     /**
      * Runs in a new thread.
      * 
-     * TO-DO: the part of processing the received thread should be in a new thread.
      */
     public void run(){
         // wait for client packets until end message is received
@@ -81,27 +76,50 @@ public class UDPServerClient extends Thread{
                 int clientPort = clientPacket.getPort();
                 byte[] clientData = clientPacket.getData();
                 
-                try {
-                    DecidedMessage message = (DecidedMessage) SerializationUtils.deserialize(clientData);
-                    // calling a new thread that will process the message
-                    //System.out.println("received decide message");
-                    Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
-                    t1.start();
-                } catch (ClassCastException e) {
-                    //System.out.println("Received ACK, ignoring...");
-                    AckMessage ack = (AckMessage) SerializationUtils.deserialize(clientData);
-                    _UDPchannel.receivedAck(ack, clientPort);
+                // we don't know the class of the message we received a priori
+                Object obj = this.deserialize(clientData);
+                Class<?> c = obj.getClass();
+                switch (c.getName()) {
+                    case "sec.G31.messages.DecidedMessage":
+                        DecidedMessage message = (DecidedMessage) obj;
+                        Thread t1 = new Thread(new ProcessMessage(clientAddress, clientPort, message));
+                        t1.start();
+                        break;
+                    case "sec.G31.messages.AckMessage":
+                        AckMessage ackMessage = (AckMessage) obj;
+                        _UDPchannel.receivedAck(ackMessage, clientPort);
+                        break;                        
+                    default:
+                        break;
                 }
-                
             }
-
             // Close socket (this will also close the socket used by the client)
             _socket.close();
-            
-        } catch( IOException e){
-            System.out.println("Error on UDP server");
-            LOGGER.log(java.util.logging.Level.SEVERE, "Error on UDP server");
+        } catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Deserializes a byte array to an object of one of the possible classes.
+     * If the deserialization fails, it tries the next class in the list.
+     * @param <T>
+     * @param data
+     * @return
+     * @throws ClassNotFoundException
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends Serializable> T deserialize(byte[] data) throws ClassNotFoundException {
+        for (Class<? extends Serializable> clazz : possibleClasses) {
+            try {
+                Serializable obj = SerializationUtils.deserialize(data);
+                if (clazz.isInstance(obj)) {
+                    return (T) obj;
+                }
+            } catch (Exception e) {
+                // Deserialization failed, try next class
+            }
+        }
+        throw new ClassNotFoundException("Failed to deserialize object to any known class");
     }
 }

@@ -30,7 +30,6 @@ public class StubbornClient
 
    
     /**
-     * TO-DO: Change the msg to an object with sequence numbers and seqId's 
      *
      * @param destAddress
      * @param destPort
@@ -55,9 +54,8 @@ public class StubbornClient
             }
 
             public void run(){
-                int timeout = 100;
+                int timeout = 200;
                 while(_currentlySendingMessages.get(_port).contains(_msg)){
-                    //System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
                     _udpChannel.sendMessage(_dest, _port, _msg);
                     try {
                         Thread.sleep(timeout);
@@ -66,24 +64,18 @@ public class StubbornClient
                     }
                     timeout *= 2;
                 }
-                ////System.out.printf("SC:: %s %d %s\n", _dest, _port, _msg);
-                //_udpChannel.sendMessage(_dest, _port, _msg);
+                
             }
         }
         Thread t1 = new Thread(new StubbornSender(destAddress,destPort, msg));
         t1.start();
-
-        //System.out.printf("SC:: %s %d %s\n", destAddress, destPort, msg);
-        //_udpChannel.sendMessage(destAddress, destPort, msg);
     }
 
     
 
     public void receivedMessage(DecidedMessage msg, int port, InetAddress address){
-        //LOGGER.info("SC:: received message");
-        //System.out.println("SC:: received message");
         if (_receivedMessages.contains(msg)){
-            //System.out.println("SC:: received message already");
+            // we already received this message
             return;
         }
         _receivedMessages.add(msg);

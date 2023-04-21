@@ -5,6 +5,10 @@ import java.util.Scanner;
 import java.net.*;
 import java.util.logging.Logger;
 
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+
 public class App
 {
     private final static Logger LOGGER = Logger.getLogger(App.class.getName());
@@ -72,10 +76,27 @@ public class App
         }
     }
 
+    // private static PublicKey getLeaderPubKey() {
+    //     try {
+    //         String publicKeyPath = "../keys/1/public_key.der"; //assuming leader is always 1
+    //         return readPublicKey(publicKeyPath);
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         System.exit(1);
+    //     }
+    //     return null;
+    // }
+
     public static Server initServer(int serverId, String address, int port, String faultType, String leaderFlag, int numF){
         try {
-            return new Server(serverId, InetAddress.getByName(address), port, faultType, leaderFlag, numF);
-        } catch (UnknownHostException e) {
+            // PublicKey leaderPubKey = getLeaderPubKey();
+            // if (leaderPubKey == null) {
+            //     return null;
+            // }
+            String publicKeyPath = "../keys/1/public_key.der"; //assuming leader is always 1
+            PublicKey leaderPubKey = readPublicKey(publicKeyPath);
+            return new Server(serverId, InetAddress.getByName(address), port, faultType, leaderFlag, numF, leaderPubKey);
+        } catch (/*UnknownHostException || */Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
@@ -84,5 +105,21 @@ public class App
 
     public Server getServer() {
         return _server;
+    }
+
+    private static byte[] readFile(String path) throws FileNotFoundException, IOException {
+        FileInputStream fis = new FileInputStream(path);
+        byte[] content = new byte[fis.available()];
+        fis.read(content);
+        fis.close();
+        return content;
+    }
+
+    public static PublicKey readPublicKey(String publicKeyPath) throws Exception {
+        byte[] pubEncoded = readFile(publicKeyPath);
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
+        KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
+        PublicKey pub = keyFacPub.generatePublic(pubSpec);
+        return pub;
     }
 }

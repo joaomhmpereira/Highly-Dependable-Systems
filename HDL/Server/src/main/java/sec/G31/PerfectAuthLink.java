@@ -2,6 +2,8 @@ package sec.G31;
 
 import sec.G31.messages.DecidedMessage;
 import sec.G31.messages.Message;
+import sec.G31.utils.TransactionBlock;
+
 //import java.util.logging.Logger;
 import javax.crypto.*;
 import java.io.*;
@@ -22,7 +24,7 @@ public class PerfectAuthLink {
     private BroadcastManager _broadcastManager;
     private Hashtable<Integer, Integer> _broadcastNeighbors; // to send broadcast
     private final String _keyPath = "../keys/";
-    private final String CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
+    private final String CIPHER_ALGO = "RSA/ECB/PKCS1PADDING";
     private final String DIGEST_ALGO = "SHA-256";
 
     public PerfectAuthLink(BroadcastManager broadcastManager, Server server, InetAddress serverAddress,
@@ -58,6 +60,10 @@ public class PerfectAuthLink {
             String cipherB64dString = Base64.getEncoder().encodeToString(cipherDigestBytes);
 
             msg.setCipheredDigest(cipherB64dString); // setting the field in the Message format
+
+            //if (msg.isBlockSet() && msg.getBlock().getType().equals("SNAPSHOT")){
+            //    System.out.println("PAC SENDING:: expectedValue: " + plainText);
+            //}
 
             // LOGGER.info("PAC:: " + destAddress + " " + destPort + " " + msg);
             _stubChannel.sendMessage(destAddress, destPort, msg);
@@ -101,24 +107,29 @@ public class PerfectAuthLink {
      */
     public void receivedMessage(Message msg, int port, InetAddress address) {
         // LOGGER.info("PAC:: received message");
+        //System.out.println("PAC:: received message from " + msg.getSenderId() + " " + msg);
         try {
             // verify that it has came from the correct port and with proper authentication
-            if (!msg.getType().equals("START")){
+            if (!msg.getType().equals("START") && !msg.getType().equals("W_BALANCE") && !msg.getType().equals("S_BALANCE") 
+                && !msg.getType().equals("TRANSACTION") && !msg.getType().equals("CREATE")) {
                 if (_broadcastNeighbors.get(msg.getSenderId()) == port && verifyMessage(msg)){
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
-                    _broadcastManager.receivedMessage(msg); // inform the upper layer
-                } else {
-                    //System.out.println("PAC:: message from " + msg.getSenderId() + " " + msg + " was not verified");
+                    _broadcastManager.receivedMessage(msg, port); // inform the upper layer
                 }
             } else { // if message comes from client we don't have to verify the port
                 if (verifyMessage(msg)) {
                     //System.out.println("PAC:: verified message from " + msg.getSenderId() + " " + msg);
-                    _broadcastManager.receivedMessage(msg); // inform the upper layer
+                    _broadcastManager.receivedMessage(msg, port); // inform the upper layer
                 }
             }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadPaddingException e1) { // decryption failed, keys don't match
+            if (msg.getType().equals("CREATE") || msg.getType().equals("S_BALANCE")
+                || msg.getType().equals("W_BALANCE") || msg.getType().equals("TRANSACTION")) {
+                DecidedMessage decidedMessage = new DecidedMessage(msg.getType(), "Error: You don't have permission to perform this operation.", _server.getId(), _server.getIBFT().getNonceCounter());
+                _broadcastManager.sendDecide(decidedMessage, port);
+            }
+        } catch (Exception e2) {
+            e2.printStackTrace();
         }
     }
 
@@ -150,6 +161,31 @@ public class PerfectAuthLink {
         return pub;
     }
 
+    public String signSnapshotBlock(String accountsStrings) {
+        try {
+            String serverKeyPath = _keyPath + _server.getId() + "/private_key.der";
+            PrivateKey key = readPrivateKey(serverKeyPath);
+
+            byte[] plainBytes = accountsStrings.getBytes();
+            
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            // cipher data
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] cipherDigestBytes = cipher.doFinal(digestBytes); // ciphering the digest bytes
+
+            String cipherB64dString = Base64.getEncoder().encodeToString(cipherDigestBytes);
+            return cipherB64dString;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /**
      * Given a message, verify its signature
      * 
@@ -158,15 +194,16 @@ public class PerfectAuthLink {
      * @throws Exception
      */
     public Boolean verifyMessage(Message msg) throws Exception {
-        String serverKeyPath;
-        if (msg.getType().equals("START")){ // if it is a start message, the key is in the clients folder
-            serverKeyPath = _keyPath + "clients/" + msg.getSenderId() + "/public_key.der";
-        } else {
-            serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+        PublicKey key;
+        if (msg.getType().equals("CREATE") || msg.getType().equals("S_BALANCE") || msg.getType().equals("W_BALANCE")) { // if it's a START or BALANCE message, the key is the public key of the client
+            key = msg.getPublicKey();
+        } else if (msg.getType().equals("TRANSACTION")) { // if it's a TRANSACTION message, the key is the source public key of the transaction
+            key = msg.getValue().getSource();
+        } else { // else, the key is the public key of the server
+            String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
+            key = readPublicKey(serverKeyPath);
         }
         //String serverKeyPath = _keyPath + msg.getSenderId() + "/public_key.der";
-        PublicKey key = readPublicKey(serverKeyPath);
-
         // decode from B64
         byte[] cipheredDigestBytes = Base64.getDecoder().decode(msg.getCipheredDigest());
 
@@ -185,6 +222,43 @@ public class PerfectAuthLink {
         messageDigest.update(plainBytes);
         byte[] digestBytes = messageDigest.digest();
 
+        //if (msg.isBlockSet() && msg.getBlock().getType().equals("SNAPSHOT")){
+        //    System.out.println("PAC:: expectedValue: " + plainText);
+        //    System.out.println("PAC:: digestBytes: " + Arrays.toString(digestBytes));
+        //    System.out.println("PAC:: uncipheredDigestBytes: " + Arrays.toString(uncipheredDigestBytes));
+        //}
+        
         return Arrays.equals(digestBytes, uncipheredDigestBytes);
+    }
+
+    public Boolean verifySignature(String signatureToVerify, String expectedValue, int serverId){
+        try {
+            String serverKeyPath = _keyPath + serverId + "/public_key.der";
+            PublicKey key = readPublicKey(serverKeyPath);
+
+            byte[] cipheredDigestBytes = Base64.getDecoder().decode(signatureToVerify);
+
+
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] uncipheredDigestBytes = cipher.doFinal(cipheredDigestBytes);
+
+            byte[] plainBytes = expectedValue.getBytes();
+
+            // digest data
+            MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
+            messageDigest.update(plainBytes);
+            byte[] digestBytes = messageDigest.digest();
+
+            //System.out.println("PAC:: expectedValue: " + expectedValue);
+            //System.out.println("PAC:: digestBytes: " + Arrays.toString(digestBytes));
+            //System.out.println("PAC:: uncipheredDigestBytes: " + Arrays.toString(uncipheredDigestBytes));
+
+            return Arrays.equals(digestBytes, uncipheredDigestBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
